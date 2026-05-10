@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="vi" class="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEONGON AI – Marketing Intelligence Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#0037b7",
+        "primary-container": "#004aef",
+        "on-primary": "#ffffff",
+        "on-primary-container": "#cfd6ff",
+        "secondary": "#00677f",
+        "secondary-container": "#19d1ff",
+        "on-secondary": "#ffffff",
+        "on-secondary-container": "#00566b",
+        "tertiary": "#881e00",
+        "tertiary-container": "#b22b01",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "surface": "#f8f9ff",
+        "surface-dim": "#cbdbf5",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low": "#eff4ff",
+        "surface-container": "#e5eeff",
+        "surface-container-high": "#dce9ff",
+        "surface-container-highest": "#d3e4fe",
+        "on-surface": "#0b1c30",
+        "on-surface-variant": "#434656",
+        "inverse-surface": "#213145",
+        "inverse-on-surface": "#eaf1ff",
+        "inverse-primary": "#b8c4ff",
+        "outline": "#747688",
+        "outline-variant": "#c3c5d9",
+        "tertiary-fixed-dim": "#ffb4a1",
+        "secondary-fixed-dim": "#4dd6ff",
+        "surface-variant": "#d3e4fe",
+        "secondary-fixed": "#b7eaff",
+        "ai-yellow": "#ffce00",
+      },
+      borderRadius: {
+        DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", "3xl": "1.25rem", full: "9999px"
+      },
+      spacing: {
+        "sidebar-width": "280px", gutter: "24px", "container-padding": "32px", "card-gap": "20px"
+      },
+      fontFamily: {
+        lexend: ["Lexend", "sans-serif"],
+        inter: ["Inter", "sans-serif"],
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { font-family: 'Inter', sans-serif; }
+  h1, h2, h3, h4, .font-lexend { font-family: 'Lexend', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-family: 'Material Symbols Outlined'; font-style: normal; display: inline-block; line-height: 1; text-transform: none; letter-spacing: normal; word-wrap: normal; white-space: nowrap; direction: ltr; }
+  .fill-icon { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+  /* Sidebar */
+  .sidebar { background: linear-gradient(160deg, #1a2e4a 0%, #0d1f35 60%, #0a1628 100%); }
+  .nav-active { background: rgba(25,209,255,0.12); border-left: 3px solid #19d1ff; color: #4dd6ff; }
+  .nav-item { border-left: 3px solid transparent; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+
+  /* Cards */
+  .card { background: #fff; border: 1px solid rgba(195,197,217,0.35); box-shadow: 0 4px 20px rgba(0,26,77,0.05); }
+  .card-gradient { background: linear-gradient(135deg, #0037b7 0%, #004aef 100%); box-shadow: 0 4px 24px rgba(0,55,183,0.25); }
+  .card-dark { background: linear-gradient(160deg, #1a2e4a 0%, #0d1f35 100%); }
+  .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(226,232,240,0.6); }
+
+  /* Chart tooltip */
+  .chart-tooltip { position: absolute; background: #1a2e4a; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 12px; pointer-events: none; white-space: nowrap; }
+
+  /* Page sections */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Animations */
+  @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .pulse { animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes fade-in { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+  .fade-in { animation: fade-in 0.3s ease forwards; }
+
+  /* AI panel */
+  .ai-badge { background: linear-gradient(90deg, #ffce00, #ff9500); }
+  .ai-card { border: 1px solid rgba(255,206,0,0.2); background: rgba(255,206,0,0.04); }
+  .ai-card:hover { background: rgba(255,206,0,0.08); border-color: rgba(255,206,0,0.4); }
+
+  /* Progress bar */
+  .progress-bar { height: 6px; border-radius: 999px; background: #e5eeff; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 1s ease; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c3c5d9; border-radius: 3px; }
+
+  /* Status chip */
+  .chip-green { background: #e8f5e9; color: #2e7d32; }
+  .chip-red { background: #ffeaed; color: #c62828; }
+  .chip-blue { background: #e3f2fd; color: #0037b7; }
+  .chip-yellow { background: #fff8e1; color: #e65100; }
+
+  /* ── Login Overlay ── */
+  #login-overlay { position: fixed; inset: 0; z-index: 9999; background: #f8f9ff; background-image: radial-gradient(at 0% 0%, rgba(25,209,255,0.05) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(0,55,183,0.03) 0px, transparent 50%); display: flex; align-items: center; justify-content: center; padding: 24px; min-height: 100vh; }
+  .otp-input:focus { border-color: #19d1ff !important; box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.05), 0 0 0 4px rgba(25,209,255,0.12) !important; }
+  .otp-input { caret-color: transparent; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-8px);} 40%{transform:translateX(8px);} 60%{transform:translateX(-5px);} 80%{transform:translateX(5px);} }
+</style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+
+<!-- ═══════════════════════ LOGIN OVERLAY ═══════════════════════ -->
+<div id="login-overlay">
+<div id="login-wrapper" style="width:100%;max-width:480px;">
+
+  <!-- ── SCREEN 1: Enter Email (Stitch design) ── -->
+  <div id="login-step-1" style="display:flex;flex-direction:column;align-items:center;">
+    <!-- Logo Branding -->
+    <div style="margin-bottom:40px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="width:64px;height:64px;border-radius:12px;background:#213145;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(0,0,0,0.2);margin-bottom:16px;">
+        <span class="material-symbols-outlined" style="font-size:40px;color:#4dd6ff;font-variation-settings:'FILL' 1;">auto_awesome</span>
+      </div>
+      <h1 style="font-family:'Lexend',sans-serif;font-size:32px;font-weight:600;color:#0b1c30;letter-spacing:-0.01em;margin:0;">SEONGON AI</h1>
+      <p style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#747688;margin:0;">Marketing Intelligence</p>
+    </div>
+    <!-- Login Card -->
+    <div style="width:100%;background:#ffffff;border-radius:20px;box-shadow:0px 4px 20px rgba(0,26,77,0.05);border:1px solid rgba(195,197,217,0.3);overflow:hidden;">
+      <!-- Card Header -->
+      <div style="background:linear-gradient(135deg,rgba(25,209,255,0.05) 0%,rgba(255,255,255,0) 100%);padding:40px 40px 24px;text-align:center;">
+        <h2 style="font-family:'Lexend',sans-serif;font-size:24px;font-weight:500;color:#0b1c30;margin:0 0 8px;">Welcome back</h2>
+        <p style="font-family:'Inter',sans-serif;font-size:14px;color:#434656;margin:0;line-height:1.6;">Enter your email to access your marketing intelligence dashboard</p>
+      </div>
+      <!-- Card Body -->
+      <div style="padding:0 40px 40px;">
+        <div style="margin-top:0;padding-top:24px;">
+          <label style="display:block;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#434656;margin-bottom:8px;margin-left:4px;">Work Email</label>
+          <div style="position:relative;">
+            <div style="position:absolute;top:0;bottom:0;left:0;padding-left:16px;display:flex;align-items:center;pointer-events:none;">
+              <span class="material-symbols-outlined" style="color:#747688;font-size:20px;">mail</span>
+            </div>
+            <input id="login-email" type="email" placeholder="name@company.com" autocomplete="email"
+              onkeydown="if(event.key==='Enter')handleContinue()"
+              style="display:block;width:100%;padding:16px 16px 16px 48px;background:#f8f9ff;border:1px solid rgba(195,197,217,0.5);border-radius:12px;font-family:'Inter',sans-serif;font-size:16px;color:#0b1c30;outline:none;box-shadow:inset 0 2px 4px 0 rgba(0,0,0,0.05);transition:border-color 0.2s,box-shadow 0.2s;box-sizing:border-box;"
+              onfocus="this.style.borderColor='#19d1ff';this.style.boxShadow='inset 0 2px 4px 0 rgba(0,0,0,0.05),0 0 0 2px rgba(25,209,255,0.2)'"
+              onblur="this.style.borderColor='rgba(195,197,217,0.5)';this.style.boxShadow='inset 0 2px 4px 0 rgba(0,0,0,0.05)'">
+          </div>
+          <div id="login-error" style="display:none;margin-top:8px;font-family:'Inter',sans-serif;font-size:13px;color:#ba1a1a;background:rgba(186,26,26,0.08);border:1px solid rgba(186,26,26,0.2);border-radius:8px;padding:8px 12px;"></div>
+        </div>
+        <button id="login-send-btn" onclick="handleContinue()"
+          style="margin-top:24px;width:100%;padding:16px;border-radius:12px;background:linear-gradient(180deg,#004aef 0%,#0037b7 100%);border:none;color:#fff;font-family:'Lexend',sans-serif;font-size:20px;font-weight:500;cursor:pointer;box-shadow:0px 4px 12px rgba(0,74,239,0.25);transition:box-shadow 0.2s,transform 0.1s;"
+          onmouseover="this.style.boxShadow='0px 6px 20px rgba(0,74,239,0.35)'"
+          onmouseout="this.style.boxShadow='0px 4px 12px rgba(0,74,239,0.25)'"
+          onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+          <span id="login-btn-text">Continue</span>
+        </button>
+        <div style="margin-top:32px;padding-top:32px;border-top:1px solid rgba(195,197,217,0.2);display:flex;flex-direction:column;gap:16px;align-items:center;">
+          <div style="display:flex;align-items:center;gap:24px;">
+            <a href="#" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.05em;color:#00677f;text-decoration:none;">Trouble logging in?</a>
+            <span style="width:4px;height:4px;border-radius:50%;background:#c3c5d9;display:inline-block;"></span>
+            <a href="#" style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.05em;color:#00677f;text-decoration:none;">Contact support</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Security Badge -->
+    <div style="margin-top:48px;display:flex;align-items:center;gap:12px;opacity:0.6;">
+      <span class="material-symbols-outlined" style="color:#747688;font-size:18px;">verified_user</span>
+      <p style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#747688;margin:0;">Enterprise-grade security and data encryption</p>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 2: Verify OTP (Stitch design) ── -->
+  <div id="login-step-2" style="display:none;">
+
+    <div style="width:100%;background:#ffffff;border-radius:12px;box-shadow:0px 4px 20px rgba(0,26,77,0.05);border:1px solid #c3c5d9;overflow:hidden;">
+      <!-- Header -->
+      <header style="background:rgba(0,74,239,0.05);backdrop-filter:blur(8px);padding:32px;border-bottom:1px solid rgba(195,197,217,0.3);display:flex;flex-direction:column;align-items:center;text-align:center;">
+        <div style="margin-bottom:24px;display:flex;align-items:center;gap:8px;">
+          <div style="width:40px;height:40px;background:#004aef;border-radius:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,74,239,0.3);">
+            <span class="material-symbols-outlined" style="color:#fff;font-size:24px;font-variation-settings:'FILL' 1;">auto_awesome</span>
+          </div>
+          <span style="font-family:'Lexend',sans-serif;font-size:24px;font-weight:700;color:#0b1c30;letter-spacing:-0.01em;">SEONGON AI</span>
+        </div>
+        <h1 style="font-family:'Lexend',sans-serif;font-size:24px;font-weight:500;color:#0b1c30;margin:0 0 8px;">Verify your email</h1>
+        <p style="font-family:'Inter',sans-serif;font-size:14px;color:#434656;margin:0;max-width:320px;line-height:1.6;">Enter the 6-digit verification code to access your marketing intelligence dashboard</p>
+      </header>
+      <!-- Form -->
+      <div style="padding:40px 32px;">
+        <!-- OTP 6-digit inputs -->
+        <div id="otp-container" style="display:flex;justify-content:space-between;gap:12px;">
+          <input type="text" maxlength="1" placeholder="-" aria-label="Digit 1" inputmode="numeric" pattern="[0-9]"
+            class="otp-input" style="flex:1 1 0;min-width:0;width:0;height:64px;text-align:center;font-family:'Lexend',sans-serif;font-size:24px;font-weight:600;border:2px solid #c3c5d9;border-radius:8px;background:#f8f9ff;color:#0b1c30;outline:none;box-shadow:inset 0 2px 4px 0 rgba(0,0,0,0.05);transition:border-color 0.2s,box-shadow 0.2s;">
+          <input type="text" maxlength="1" placeholder="-" aria-label="Digit 2" inputmode="numeric" pattern="[0-9]"
+            class="otp-input" style="flex:1 1 0;min-width:0;width:0;height:64px;text-align:center;font-family:'Lexend',sans-serif;font-size:24px;font-weight:600;border:2px solid #c3c5d9;border-radius:8px;background:#f8f9ff;color:#0b1c30;outline:none;box-shadow:inset 0 2px 4px 0 rgba(0,0,0,0.05);transition:border-color 0.2s,box-shadow 0.2s;">
+          <input type="text" maxlength="1" placeholder="-" aria-label="Digit 3" inputmode="numeric" pattern="[0-9]"
+            class="otp-input" style="flex:1 1 0;min-width:0;width:0;height:64px;text-align:center;font-family:'Lexend',sans-serif;font-size:24px;font-weight:600;border:2px solid #c3c5d9;border-radius:8px;background:#f8f9ff;color:#0b1c30;outline:none;box-shadow:inset 0 2px 4px 0 rgba(0,0,0,0.05);transition:border-color 0.2s,box-shadow 0.2s;">
+          <input type="text" maxlength="1" placeholder="-" aria-label="Digit 4" inputmode="numeric" pattern="[0-9]"
+            class="otp-input" style="flex:1 1 0;min-width:0;width:0;height:64px;text-align:center;font-family:'Lexend',sans-serif;font-size:24px;font-weight:600;border:2px solid #c3c5d9;border-radius:8px;background:#f8f9ff;color:#0b1c30;outline:none;box-shadow:inset 0 2px 4px 0 rgba(0,0,0,0.05);transition:border-color 0.2s,box-shadow 0.2s;">
+          <input type="text" maxlength="1" placeholder="-" aria-label="Digit 5" inputmode="numeric" pattern="[0-9]"
+            class="otp-input" style="flex:1 1 0;min-width:0;width:0;height:64px;text-align:center;font-family:'Lexend',sans-serif;font-size:24px;font-weight:600;border:2px solid #c3c5d9;border-radius:8px;background:#f8f9ff;color:#0b1c30;outline:none;box-shadow:inset 0 2px 4px 0 rgba(0,0,0,0.05);transition:border-color 0.2s,box-shadow 0.2s;">
+          <input type="text" maxlength="1" placeholder="-" aria-label="Digit 6" inputmode="numeric" pattern="[0-9]"
+            class="otp-input" style="flex:1 1 0;min-width:0;width:0;height:64px;text-align:center;font-family:'Lexend',sans-serif;font-size:24px;font-weight:600;border:2px solid #c3c5d9;border-radius:8px;background:#f8f9ff;color:#0b1c30;outline:none;box-shadow:inset 0 2px 4px 0 rgba(0,0,0,0.05);transition:border-color 0.2s,box-shadow 0.2s;">
+        </div>
+
+        <div id="otp-error" style="display:none;margin-top:12px;font-family:'Inter',sans-serif;font-size:13px;color:#ba1a1a;background:rgba(186,26,26,0.08);border:1px solid rgba(186,26,26,0.2);border-radius:8px;padding:8px 12px;text-align:center;"></div>
+
+        <!-- Verify button -->
+        <button id="verify-btn" onclick="handleVerifyOtp()"
+          style="margin-top:32px;width:100%;padding:16px 24px;border-radius:8px;background:linear-gradient(180deg,#004aef 0%,#0037b7 100%);border:none;color:#fff;font-family:'Lexend',sans-serif;font-size:20px;font-weight:500;cursor:pointer;box-shadow:0 4px 14px 0 rgba(0,74,239,0.39);transition:box-shadow 0.2s,transform 0.1s;display:flex;align-items:center;justify-content:center;gap:8px;"
+          onmouseover="this.style.boxShadow='0 6px 20px rgba(0,74,239,0.45)'"
+          onmouseout="this.style.boxShadow='0 4px 14px 0 rgba(0,74,239,0.39)'"
+          onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+          <span id="verify-btn-text">Verify &amp; Login</span>
+          <span class="material-symbols-outlined" style="font-size:20px;">arrow_forward</span>
+        </button>
+
+        <!-- Email OTP hint + change email -->
+        <div style="margin-top:32px;text-align:center;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;color:#434656;font-family:'Inter',sans-serif;font-size:14px;margin-bottom:16px;">
+            <span class="material-symbols-outlined" style="font-size:18px;color:#747688;">info</span>
+            <span>We sent a 6-digit code to your email.</span>
+          </div>
+          <button onclick="backToStep1()"
+            style="background:none;border:none;color:#00677f;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:0;transition:color 0.2s;"
+            onmouseover="this.style.color='#004e60'" onmouseout="this.style.color='#00677f'">
+            ← Change email
+          </button>
+        </div>
+      </div>
+      <!-- Security Footer -->
+      <footer style="background:#eff4ff;padding:16px 32px;display:flex;align-items:center;justify-content:center;gap:8px;border-top:1px solid rgba(195,197,217,0.2);">
+        <span class="material-symbols-outlined" style="color:#747688;font-size:16px;font-variation-settings:'FILL' 1;">verified_user</span>
+        <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#747688;">Secure Verification by SEONGON</span>
+      </footer>
+    </div>
+  </div>
+
+</div><!-- /login-wrapper -->
+</div><!-- /login-overlay -->
+
+<!-- ═══════════════════════════════════ SIDEBAR ═══════════════════════════════════ -->
+<aside class="sidebar fixed left-0 top-0 w-sidebar-width h-screen flex flex-col py-6 px-4 gap-1 z-50 overflow-y-auto">
+  <!-- Logo -->
+  <div class="flex items-center gap-3 mb-7 px-2">
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#004aef,#19d1ff);">
+      <span class="material-symbols-outlined fill-icon text-white text-xl">hub</span>
+    </div>
+    <div>
+      <h1 class="font-lexend text-base font-bold text-white leading-none tracking-tight">SEONGON AI</h1>
+      <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Marketing Intelligence</p>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 space-y-0.5">
+    <button onclick="showPage('dashboard')" data-page="dashboard" class="nav-item nav-active w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left">
+      <span class="material-symbols-outlined text-xl">dashboard</span> Dashboard
+    </button>
+    <button onclick="showPage('seo')" data-page="seo" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">query_stats</span> SEO Analytics
+    </button>
+    <button onclick="showPage('paid')" data-page="paid" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">payments</span> Paid Media
+    </button>
+    <button onclick="showPage('social')" data-page="social" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">share</span> Social Media
+    </button>
+    <button onclick="showPage('content')" data-page="content" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">article</span> Content Performance
+    </button>
+    <button onclick="showPage('leads')" data-page="leads" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">person_add</span> Lead Generation
+    </button>
+    <button onclick="showPage('funnel')" data-page="funnel" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">filter_alt</span> Conversion Funnel
+    </button>
+
+    <div class="pt-3 pb-1 px-4">
+      <p class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">AI Tools</p>
+    </div>
+    <button onclick="showPage('ai')" data-page="ai" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl fill-icon">auto_awesome</span>
+      <span>AI Copilot</span>
+      <span class="ml-auto text-[10px] font-bold bg-ai-yellow text-black px-1.5 py-0.5 rounded-full">3</span>
+    </button>
+    <button onclick="showPage('geo')" data-page="geo" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">map</span> GEO Performance
+    </button>
+  </nav>
+
+  <!-- User -->
+  <div class="mt-4 pt-4 border-t border-white/10">
+    <div class="flex items-center gap-3 px-2 py-2.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer mb-2">
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center text-white font-bold text-sm">T</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-white font-semibold text-sm truncate">Thiên Nguyễn</p>
+        <p class="text-slate-400 text-[10px] truncate">Marketing Manager</p>
+      </div>
+      <span class="material-symbols-outlined text-slate-400 text-base">more_vert</span>
+    </div>
+    <button class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors w-full">
+      <span class="material-symbols-outlined text-base">settings</span> Settings
+    </button>
+    <button onclick="handleSignOut()" class="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-red-400 text-sm transition-colors w-full">
+      <span class="material-symbols-outlined text-base">logout</span> Đăng xuất
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════ MAIN ═══════════════════════════════════ -->
+<main class="ml-sidebar-width min-h-screen">
+
+  <!-- TOP BAR -->
+  <header class="fixed top-0 right-0 z-40 flex items-center justify-between px-gutter h-[68px] border-b border-outline-variant/20 bg-surface/90 backdrop-blur-xl" style="width:calc(100% - 280px);">
+    <div class="flex items-center gap-5 flex-1">
+      <h2 id="page-title" class="font-lexend text-lg font-bold text-on-surface whitespace-nowrap">Marketing Dashboard</h2>
+      <div class="relative max-w-xs w-full">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-base">search</span>
+        <input class="w-full pl-9 pr-4 py-2 bg-surface-container-low border border-outline-variant/50 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-secondary-container transition-all" placeholder="Tìm metrics, báo cáo..." type="text">
+      </div>
+    </div>
+    <div class="flex items-center gap-3 ml-4">
+      <!-- Date range -->
+      <div class="flex items-center gap-1 bg-surface-container-high border border-outline-variant/40 rounded-lg px-3 py-1.5 text-sm font-medium text-on-surface-variant cursor-pointer hover:bg-surface-container-highest transition-all">
+        <span class="material-symbols-outlined text-base">calendar_today</span>
+        <select id="date-range" class="bg-transparent border-none outline-none text-sm font-medium cursor-pointer" onchange="updateDateRange()">
+          <option value="7">7 ngày qua</option>
+          <option value="30" selected>30 ngày qua</option>
+          <option value="90">90 ngày qua</option>
+          <option value="365">Năm nay</option>
+        </select>
+      </div>
+      <!-- AI Insights btn -->
+      <button onclick="showPage('ai')" class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-black transition-all hover:brightness-110 active:scale-95" style="background:linear-gradient(90deg,#ffce00,#ffaa00);">
+        <span class="material-symbols-outlined text-base fill-icon">auto_awesome</span> AI Insights
+      </button>
+      <div class="h-7 w-px bg-outline-variant/30"></div>
+      <button class="relative p-2 text-outline hover:bg-surface-container-high rounded-full transition-all">
+        <span class="material-symbols-outlined text-xl">notifications</span>
+        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+      </button>
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center text-white font-bold text-sm cursor-pointer">T</div>
+    </div>
+  </header>
+
+  <div class="pt-[68px]">
+
+    <!-- ══════════════ PAGE: DASHBOARD ══════════════ -->
+    <div id="page-dashboard" class="page active px-gutter py-6 space-y-card-gap fade-in">
+
+      <!-- Welcome -->
+      <div class="flex justify-between items-end">
+        <div>
+          <h1 class="font-lexend text-2xl font-bold text-on-surface">Marketing Dashboard</h1>
+          <p class="text-outline text-sm mt-1">Real-time intelligence & campaign performance — Seongon Agency</p>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-outline">
+          <span class="w-2 h-2 rounded-full bg-green-500 pulse"></span>
+          Live · cập nhật 2 phút trước
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <!-- Organic Traffic -->
+        <div class="card-gradient rounded-2xl p-6 text-white relative overflow-hidden">
+          <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+              <span class="material-symbols-outlined p-2 bg-white/20 rounded-lg fill-icon text-xl">trending_up</span>
+              <span class="text-xs font-bold bg-white/20 px-2 py-1 rounded-full">+25.2%</span>
+            </div>
+            <p class="text-white/70 text-[11px] uppercase tracking-widest font-semibold mb-1">Organic Traffic Value</p>
+            <h3 class="font-lexend text-2xl font-bold mb-3">$420,280</h3>
+            <div class="h-8 flex items-end gap-0.5">
+              <div class="bg-white/25 rounded-t w-full" style="height:50%"></div>
+              <div class="bg-white/35 rounded-t w-full" style="height:65%"></div>
+              <div class="bg-white/45 rounded-t w-full" style="height:80%"></div>
+              <div class="bg-white/60 rounded-t w-full" style="height:100%"></div>
+              <div class="bg-white/40 rounded-t w-full" style="height:70%"></div>
+              <div class="bg-white/50 rounded-t w-full" style="height:90%"></div>
+              <div class="bg-white/35 rounded-t w-full" style="height:60%"></div>
+            </div>
+          </div>
+          <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+        </div>
+
+        <!-- AI Visibility -->
+        <div class="card rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <span class="material-symbols-outlined p-2 bg-secondary-container/20 text-secondary rounded-lg fill-icon text-xl">auto_awesome</span>
+              <span class="text-xs font-bold text-secondary">AI Optimized</span>
+            </div>
+            <p class="text-outline text-[11px] uppercase tracking-widest font-semibold mb-1">AI Visibility Score</p>
+            <h3 class="font-lexend text-2xl font-bold text-on-surface">88 <span class="text-outline text-base font-normal">/ 100</span></h3>
+          </div>
+          <div class="mt-4 space-y-2">
+            <div class="flex justify-between text-xs mb-1"><span class="text-outline">ChatGPT Citations</span><span class="font-bold">42.4k</span></div>
+            <div class="progress-bar"><div class="progress-fill bg-secondary-container" style="width:82%"></div></div>
+            <div class="flex justify-between text-xs mb-1 mt-2"><span class="text-outline">Google AI Overviews</span><span class="font-bold">15.2k</span></div>
+            <div class="progress-bar"><div class="progress-fill bg-primary" style="width:65%"></div></div>
+          </div>
+        </div>
+
+        <!-- Leads -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-start mb-4">
+            <span class="material-symbols-outlined p-2 bg-orange-100 text-orange-600 rounded-lg text-xl">person_add</span>
+            <span class="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">+12% WoW</span>
+          </div>
+          <p class="text-outline text-[11px] uppercase tracking-widest font-semibold mb-1">Leads Generated</p>
+          <h3 class="font-lexend text-2xl font-bold text-on-surface">1,250</h3>
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            <div class="bg-surface-container-low rounded-lg p-2.5">
+              <p class="text-[10px] text-outline font-bold uppercase mb-1">MQLs</p>
+              <p class="font-bold text-sm">842</p>
+            </div>
+            <div class="bg-surface-container-low rounded-lg p-2.5">
+              <p class="text-[10px] text-outline font-bold uppercase mb-1">SQLs</p>
+              <p class="font-bold text-sm">408</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROAS -->
+        <div class="card rounded-2xl p-6 relative overflow-hidden">
+          <div class="flex justify-between items-start mb-4">
+            <span class="material-symbols-outlined p-2 bg-surface-container text-on-surface-variant rounded-lg text-xl">payments</span>
+            <div class="text-right">
+              <span class="text-sm font-bold text-on-surface block">4.8x ROAS</span>
+              <span class="text-[10px] text-secondary font-bold">Target: 5.0x</span>
+            </div>
+          </div>
+          <p class="text-outline text-[11px] uppercase tracking-widest font-semibold mb-1">Total Ad Spend</p>
+          <h3 class="font-lexend text-2xl font-bold text-on-surface">₫1.27B</h3>
+          <div class="mt-3 flex gap-0.5 h-8 items-end">
+            <div class="bg-primary/15 rounded-t w-full" style="height:50%"></div>
+            <div class="bg-primary/30 rounded-t w-full" style="height:70%"></div>
+            <div class="bg-primary/50 rounded-t w-full" style="height:100%"></div>
+            <div class="bg-primary/25 rounded-t w-full" style="height:60%"></div>
+            <div class="bg-primary/70 rounded-t w-full" style="height:85%"></div>
+            <div class="bg-primary/40 rounded-t w-full" style="height:75%"></div>
+          </div>
+          <!-- Target indicator -->
+          <div class="mt-3 flex items-center gap-2">
+            <div class="progress-bar flex-1"><div class="progress-fill bg-primary" style="width:96%"></div></div>
+            <span class="text-[10px] text-outline font-bold">96%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+        <!-- Multi-channel chart -->
+        <div class="card rounded-2xl p-6 lg:col-span-2">
+          <div class="flex justify-between items-start mb-5">
+            <div>
+              <h4 class="font-lexend font-bold text-on-surface">Multi-channel Performance</h4>
+              <p class="text-outline text-xs mt-0.5">Tổng hợp SEO, Paid Media & AI Search</p>
+            </div>
+            <div class="flex gap-3 text-xs">
+              <label class="flex items-center gap-1.5 cursor-pointer"><span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span> Organic</label>
+              <label class="flex items-center gap-1.5 cursor-pointer"><span class="w-2.5 h-2.5 rounded-full bg-secondary-container inline-block"></span> Paid</label>
+              <label class="flex items-center gap-1.5 cursor-pointer"><span class="w-2.5 h-2.5 rounded-full bg-ai-yellow inline-block"></span> AI</label>
+            </div>
+          </div>
+          <div class="h-56">
+            <canvas id="multiChannelChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Traffic sources donut -->
+        <div class="card rounded-2xl p-6 flex flex-col">
+          <h4 class="font-lexend font-bold text-on-surface mb-0.5">Traffic Sources</h4>
+          <p class="text-outline text-xs mb-4">Phân bổ kênh tháng này</p>
+          <div class="flex-1 relative flex items-center justify-center">
+            <canvas id="trafficDonut" style="max-height:180px;"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span class="font-lexend text-xl font-bold">1.2M</span>
+              <span class="text-[10px] text-outline uppercase font-bold">Sessions</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-y-2 mt-4 text-xs">
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span> Organic (45%)</div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-secondary-container inline-block"></span> AI Search (32%)</div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-tertiary-container inline-block"></span> Paid (12%)</div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-surface-dim inline-block"></span> Direct (11%)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Funnel + AI Search Monitor -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+        <!-- Funnel -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h4 class="font-lexend font-bold text-on-surface">Marketing Funnel</h4>
+            <span class="text-xs font-bold text-secondary bg-secondary-container/10 px-3 py-1 rounded-full">Conversion Healthy</span>
+          </div>
+          <div class="space-y-3">
+            <div class="bg-primary/8 border border-primary/15 rounded-xl p-4 flex justify-between items-center" style="background:rgba(0,55,183,0.05);">
+              <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-primary text-white font-bold text-xs flex items-center justify-center">1</span><span class="font-semibold text-sm">Impressions</span></div>
+              <div class="text-right"><span class="font-bold text-on-surface">17.2M</span><p class="text-[10px] text-outline">100% reach</p></div>
+            </div>
+            <div class="flex justify-center"><span class="material-symbols-outlined text-outline-variant text-xl">arrow_downward</span></div>
+            <div class="mx-4 border border-primary/25 rounded-xl p-4 flex justify-between items-center" style="background:rgba(0,55,183,0.08);">
+              <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-primary/70 text-white font-bold text-xs flex items-center justify-center">2</span><span class="font-semibold text-sm">Engagements</span></div>
+              <div class="text-right"><span class="font-bold text-on-surface">2.4M</span><p class="text-[10px] text-primary font-bold">14% CTR</p></div>
+            </div>
+            <div class="flex justify-center"><span class="material-symbols-outlined text-outline-variant text-xl">arrow_downward</span></div>
+            <div class="mx-8 border border-secondary-container/40 rounded-xl p-4 flex justify-between items-center" style="background:rgba(25,209,255,0.06);">
+              <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-secondary text-white font-bold text-xs flex items-center justify-center">3</span><span class="font-semibold text-sm">Leads (MQL)</span></div>
+              <div class="text-right"><span class="font-bold text-on-surface">842</span><p class="text-[10px] text-secondary font-bold">5.2% conv.</p></div>
+            </div>
+            <div class="flex justify-center"><span class="material-symbols-outlined text-outline-variant text-xl">arrow_downward</span></div>
+            <div class="mx-12 border border-green-200 rounded-xl p-4 flex justify-between items-center bg-green-50">
+              <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-green-600 text-white font-bold text-xs flex items-center justify-center">4</span><span class="font-semibold text-sm">Customers (SQL)</span></div>
+              <div class="text-right"><span class="font-bold text-on-surface">408</span><p class="text-[10px] text-green-700 font-bold">48.5% close</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Search Monitoring -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-center mb-5">
+            <h4 class="font-lexend font-bold text-on-surface">AI Search Monitoring</h4>
+            <div class="flex items-center gap-1.5 text-xs text-outline">
+              <span class="w-2 h-2 rounded-full bg-green-500 pulse inline-block"></span> Live
+            </div>
+          </div>
+          <div class="space-y-3">
+            <!-- ChatGPT -->
+            <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/40">
+              <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-on-surface flex items-center justify-center"><span class="text-white text-[10px] font-bold">GPT</span></div>
+                  <span class="font-semibold text-sm">ChatGPT</span>
+                </div>
+                <span class="chip-blue text-[10px] font-bold px-2 py-1 rounded-full">#1 Citation</span>
+              </div>
+              <div class="text-xs text-outline mb-2">Sentiment: <span class="text-green-600 font-bold">Positive (92%)</span></div>
+              <div class="progress-bar"><div class="progress-fill bg-green-500" style="width:92%"></div></div>
+            </div>
+            <!-- Google SGE -->
+            <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/40">
+              <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">G</div>
+                  <span class="font-semibold text-sm">Google AI Overviews</span>
+                </div>
+                <span class="chip-blue text-[10px] font-bold px-2 py-1 rounded-full">82% appear</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill bg-primary" style="width:82%"></div></div>
+              <p class="text-[10px] text-outline mt-2">Xuất hiện trong "Best Marketing Agency Vietnam 2025"</p>
+            </div>
+            <!-- Perplexity -->
+            <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/40">
+              <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant font-bold text-xs">PX</div>
+                  <span class="font-semibold text-sm">Perplexity AI</span>
+                </div>
+                <span class="chip-yellow text-[10px] font-bold px-2 py-1 rounded-full">Monitoring...</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill bg-ai-yellow" style="width:38%"></div></div>
+              <p class="text-[10px] text-outline mt-2">38% appearance rate — đang tối ưu</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Top Content + AI Copilot -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-card-gap">
+        <!-- Content Table -->
+        <div class="card rounded-2xl p-6 lg:col-span-3">
+          <div class="flex justify-between items-center mb-5">
+            <h4 class="font-lexend font-bold text-on-surface">Top Performing Content</h4>
+            <button onclick="showPage('content')" class="text-primary text-sm font-bold hover:underline">Xem tất cả →</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="border-b border-outline-variant/20">
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold">Trang / URL</th>
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold">Traffic</th>
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold">AI Citations</th>
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold">CTR</th>
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold text-right">Leads</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant/10 text-sm">
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded text-base">article</span><div><p class="font-semibold">/huong-dan/ai-marketing-2025</p><p class="text-[10px] text-outline">SEO · Top 1 Google</p></div></div></td>
+                  <td class="py-3.5 font-semibold">124,500</td>
+                  <td class="py-3.5"><div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span></div></td>
+                  <td class="py-3.5 font-bold text-primary">4.2%</td>
+                  <td class="py-3.5 font-bold text-right">2,410</td>
+                </tr>
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary bg-secondary/10 p-1.5 rounded text-base">video_library</span><div><p class="font-semibold">/dich-vu/performance-marketing</p><p class="text-[10px] text-outline">Landing Page · Conversion</p></div></div></td>
+                  <td class="py-3.5 font-semibold">82,100</td>
+                  <td class="py-3.5"><div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-outline-variant"></span></div></td>
+                  <td class="py-3.5 font-bold text-primary">6.8%</td>
+                  <td class="py-3.5 font-bold text-right">5,200</td>
+                </tr>
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-tertiary bg-tertiary/10 p-1.5 rounded text-base">download_for_offline</span><div><p class="font-semibold">/tai-lieu/seo-2025-whitepaper</p><p class="text-[10px] text-outline">Gated Content · Lead Gen</p></div></div></td>
+                  <td class="py-3.5 font-semibold">45,300</td>
+                  <td class="py-3.5"><div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-outline-variant"></span></div></td>
+                  <td class="py-3.5 font-bold text-primary">12.4%</td>
+                  <td class="py-3.5 font-bold text-right">1,850</td>
+                </tr>
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-blue-600 bg-blue-50 p-1.5 rounded text-base">cases</span><div><p class="font-semibold">/case-study/ecommerce-roas</p><p class="text-[10px] text-outline">Case Study · Trust builder</p></div></div></td>
+                  <td class="py-3.5 font-semibold">38,600</td>
+                  <td class="py-3.5"><div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-outline-variant"></span><span class="w-2 h-2 rounded-full bg-outline-variant"></span></div></td>
+                  <td class="py-3.5 font-bold text-primary">8.1%</td>
+                  <td class="py-3.5 font-bold text-right">980</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AI Copilot -->
+        <div class="card-dark rounded-2xl p-6 flex flex-col text-white relative overflow-hidden">
+          <div class="relative z-10 flex-1">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background:linear-gradient(135deg,#ffce00,#ff9500);">
+                <span class="material-symbols-outlined text-black fill-icon text-lg">auto_awesome</span>
+              </div>
+              <div>
+                <h4 class="font-bold text-sm">AI Copilot</h4>
+                <p class="text-[10px] text-slate-400">3 gợi ý đang chờ</p>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="ai-card p-3 rounded-xl cursor-pointer transition-colors">
+                <p class="text-[10px] font-bold text-ai-yellow uppercase tracking-wider mb-1">Budget</p>
+                <p class="text-xs text-slate-200 leading-relaxed">Chuyển ₫50M từ Facebook sang Google PMax để tăng ROAS 15%.</p>
+              </div>
+              <div class="ai-card p-3 rounded-xl cursor-pointer transition-colors">
+                <p class="text-[10px] font-bold text-secondary-container uppercase tracking-wider mb-1">Content</p>
+                <p class="text-xs text-slate-200 leading-relaxed">Cập nhật H1 "AI Marketing Guide" để match intent mới từ SGE.</p>
+              </div>
+              <div class="ai-card p-3 rounded-xl cursor-pointer transition-colors">
+                <p class="text-[10px] font-bold text-orange-300 uppercase tracking-wider mb-1">SEO</p>
+                <p class="text-xs text-slate-200 leading-relaxed">15 từ khóa đuôi dài có thể rank top 3 trong 30 ngày tới.</p>
+              </div>
+            </div>
+          </div>
+          <button onclick="showPage('ai')" class="w-full mt-4 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 z-10 relative" style="background:linear-gradient(90deg,#ffce00,#ff9500);color:#000;">
+            XEM TẤT CẢ GỢI Ý
+          </button>
+          <div class="absolute -right-16 -top-16 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: SEO ══════════════ -->
+    <div id="page-seo" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div class="flex justify-between items-end">
+        <div><h1 class="font-lexend text-2xl font-bold">SEO Analytics</h1><p class="text-outline text-sm mt-1">Hiệu suất tìm kiếm organic — Google Search Console + Ahrefs</p></div>
+      </div>
+
+      <!-- SEO KPIs -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Organic Sessions</p>
+          <h3 class="font-lexend text-2xl font-bold">540,200</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ 18.4% vs tháng trước</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg. Position</p>
+          <h3 class="font-lexend text-2xl font-bold">3.2</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ Cải thiện từ 4.8</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Organic CTR</p>
+          <h3 class="font-lexend text-2xl font-bold">4.8%</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ +0.6% vs benchmark</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Keywords Top 10</p>
+          <h3 class="font-lexend text-2xl font-bold">1,248</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ 92 từ khóa mới</p>
+        </div>
+      </div>
+
+      <!-- SEO Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Organic Traffic Trend</h4>
+          <div class="h-56"><canvas id="seoTrendChart"></canvas></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Keyword Position Distribution</h4>
+          <div class="h-56"><canvas id="keywordDistChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Top keywords table -->
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-5">Top Keywords</h4>
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-outline-variant/20">
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Keyword</th>
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Position</th>
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Sessions</th>
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">CTR</th>
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Trend</th>
+          </tr></thead>
+          <tbody class="divide-y divide-outline-variant/10">
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">digital marketing agency vietnam</td><td class="py-3"><span class="chip-green text-xs px-2 py-0.5 rounded-full font-bold">#1</span></td><td class="py-3 font-semibold">28,400</td><td class="py-3 text-primary font-bold">8.2%</td><td class="py-3 text-green-600 font-bold">↑ 2</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">performance marketing agency</td><td class="py-3"><span class="chip-green text-xs px-2 py-0.5 rounded-full font-bold">#2</span></td><td class="py-3 font-semibold">22,100</td><td class="py-3 text-primary font-bold">6.4%</td><td class="py-3 text-green-600 font-bold">↑ 5</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">google ads agency ho chi minh</td><td class="py-3"><span class="chip-blue text-xs px-2 py-0.5 rounded-full font-bold">#3</span></td><td class="py-3 font-semibold">18,750</td><td class="py-3 text-primary font-bold">5.9%</td><td class="py-3 text-green-600 font-bold">↑ 1</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">dịch vụ seo tổng thể</td><td class="py-3"><span class="chip-blue text-xs px-2 py-0.5 rounded-full font-bold">#4</span></td><td class="py-3 font-semibold">15,200</td><td class="py-3 text-primary font-bold">7.1%</td><td class="py-3 text-outline font-bold">— 0</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">tiktok ads agency vietnam</td><td class="py-3"><span class="chip-yellow text-xs px-2 py-0.5 rounded-full font-bold">#7</span></td><td class="py-3 font-semibold">12,800</td><td class="py-3 text-primary font-bold">4.3%</td><td class="py-3 text-red-500 font-bold">↓ 2</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: PAID MEDIA ══════════════ -->
+    <div id="page-paid" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div class="flex justify-between items-end">
+        <div><h1 class="font-lexend text-2xl font-bold">Paid Media</h1><p class="text-outline text-sm mt-1">Google Ads · Meta Ads · TikTok Ads — tổng hợp hiệu suất</p></div>
+      </div>
+
+      <!-- Paid KPIs -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card-gradient rounded-2xl p-5 text-white">
+          <p class="text-white/70 text-[11px] uppercase tracking-wider font-bold mb-2">Total Spend</p>
+          <h3 class="font-lexend text-2xl font-bold">₫1.27B</h3>
+          <p class="text-white/80 text-xs mt-1">Budget utilization: 85%</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Blended ROAS</p>
+          <h3 class="font-lexend text-2xl font-bold">4.8x</h3>
+          <p class="text-xs text-orange-500 font-bold mt-1">Target 5.0x · -4%</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Total Conversions</p>
+          <h3 class="font-lexend text-2xl font-bold">3,248</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ 22% vs tháng trước</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg. CPA</p>
+          <h3 class="font-lexend text-2xl font-bold">₫391k</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↓ -8% vs target</p>
+        </div>
+      </div>
+
+      <!-- Channel breakdown -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+        <!-- Google Ads -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><span class="text-blue-600 font-bold text-sm">G</span></div>
+            <div><h4 class="font-lexend font-bold">Google Ads</h4><p class="text-xs text-outline">Search + PMax + Display</p></div>
+          </div>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-outline">Spend</span><span class="font-bold">₫680M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Impressions</span><span class="font-bold">8.4M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Clicks</span><span class="font-bold">126,000</span></div>
+            <div class="flex justify-between"><span class="text-outline">CTR</span><span class="font-bold text-primary">1.5%</span></div>
+            <div class="flex justify-between"><span class="text-outline">CPC</span><span class="font-bold">₫5,396</span></div>
+            <div class="flex justify-between"><span class="text-outline">Conversions</span><span class="font-bold text-green-600">1,840</span></div>
+            <div class="flex justify-between border-t border-outline-variant/20 pt-3"><span class="text-outline font-bold">ROAS</span><span class="font-bold text-xl text-primary">5.2x</span></div>
+          </div>
+        </div>
+        <!-- Meta Ads -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center"><span class="text-white font-bold text-sm">f</span></div>
+            <div><h4 class="font-lexend font-bold">Meta Ads</h4><p class="text-xs text-outline">Facebook + Instagram</p></div>
+          </div>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-outline">Spend</span><span class="font-bold">₫420M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Reach</span><span class="font-bold">2.1M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Impressions</span><span class="font-bold">6.8M</span></div>
+            <div class="flex justify-between"><span class="text-outline">CTR</span><span class="font-bold text-primary">1.2%</span></div>
+            <div class="flex justify-between"><span class="text-outline">CPM</span><span class="font-bold">₫61,764</span></div>
+            <div class="flex justify-between"><span class="text-outline">Leads (CPL)</span><span class="font-bold text-green-600">840 · ₫500k</span></div>
+            <div class="flex justify-between border-t border-outline-variant/20 pt-3"><span class="text-outline font-bold">ROAS</span><span class="font-bold text-xl text-primary">4.1x</span></div>
+          </div>
+        </div>
+        <!-- TikTok Ads -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center"><span class="text-white font-bold text-sm">T</span></div>
+            <div><h4 class="font-lexend font-bold">TikTok Ads</h4><p class="text-xs text-outline">In-Feed + TopView</p></div>
+          </div>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-outline">Spend</span><span class="font-bold">₫170M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Views</span><span class="font-bold">5.2M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Clicks</span><span class="font-bold">78,400</span></div>
+            <div class="flex justify-between"><span class="text-outline">CTR</span><span class="font-bold text-primary">1.5%</span></div>
+            <div class="flex justify-between"><span class="text-outline">CPM</span><span class="font-bold">₫32,692</span></div>
+            <div class="flex justify-between"><span class="text-outline">Conversions</span><span class="font-bold text-green-600">568</span></div>
+            <div class="flex justify-between border-t border-outline-variant/20 pt-3"><span class="text-outline font-bold">ROAS</span><span class="font-bold text-xl text-primary">3.9x</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROAS Comparison Chart -->
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-4">ROAS Trend theo kênh — 30 ngày</h4>
+        <div class="h-56"><canvas id="roasChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: SOCIAL ══════════════ -->
+    <div id="page-social" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div><h1 class="font-lexend text-2xl font-bold">Social Media</h1><p class="text-outline text-sm mt-1">Facebook · Instagram · TikTok · LinkedIn — organic performance</p></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Total Followers</p><h3 class="font-lexend text-2xl font-bold">48,240</h3><p class="text-xs text-green-600 font-bold mt-1">↑ +1,240 tháng này</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg Engagement Rate</p><h3 class="font-lexend text-2xl font-bold">3.8%</h3><p class="text-xs text-green-600 font-bold mt-1">↑ Benchmark: 2.1%</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Total Reach</p><h3 class="font-lexend text-2xl font-bold">890K</h3><p class="text-xs text-green-600 font-bold mt-1">↑ 34% vs tháng trước</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Posts Published</p><h3 class="font-lexend text-2xl font-bold">42</h3><p class="text-xs text-outline mt-1">~10 posts/tuần</p></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+        <div class="card rounded-2xl p-6"><h4 class="font-lexend font-bold mb-4">Engagement Trend</h4><div class="h-56"><canvas id="socialEngChart"></canvas></div></div>
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Top Posts tháng này</h4>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex-shrink-0"></div><div class="flex-1 min-w-0"><p class="font-semibold text-sm truncate">Case Study: ROAS 8x với PMax</p><p class="text-[10px] text-outline">Facebook · 2,840 engagements</p></div><span class="chip-green text-xs px-2 py-0.5 rounded-full font-bold">Viral</span></div>
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex-shrink-0"></div><div class="flex-1 min-w-0"><p class="font-semibold text-sm truncate">AI trong Marketing 2025 — Thread</p><p class="text-[10px] text-outline">LinkedIn · 1,920 reactions</p></div><span class="chip-blue text-xs px-2 py-0.5 rounded-full font-bold">Hot</span></div>
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-orange-500 flex-shrink-0"></div><div class="flex-1 min-w-0"><p class="font-semibold text-sm truncate">TikTok Ads cho B2B — Video tips</p><p class="text-[10px] text-outline">TikTok · 48K views</p></div><span class="chip-yellow text-xs px-2 py-0.5 rounded-full font-bold">Rising</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: CONTENT ══════════════ -->
+    <div id="page-content" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div><h1 class="font-lexend text-2xl font-bold">Content Performance</h1><p class="text-outline text-sm mt-1">Blog · Landing Pages · Whitepapers — hiệu suất nội dung</p></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Published Articles</p><h3 class="font-lexend text-2xl font-bold">86</h3><p class="text-xs text-green-600 font-bold mt-1">8 articles mới tháng này</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg Time on Page</p><h3 class="font-lexend text-2xl font-bold">4m 32s</h3><p class="text-xs text-green-600 font-bold mt-1">↑ +42s vs tháng trước</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Leads from Content</p><h3 class="font-lexend text-2xl font-bold">624</h3><p class="text-xs text-green-600 font-bold mt-1">49.9% tổng leads</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Content ROAS</p><h3 class="font-lexend text-2xl font-bold">12.4x</h3><p class="text-xs text-green-600 font-bold mt-1">↑ Highest channel</p></div>
+      </div>
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-5">Tất cả content — hiệu suất</h4>
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-outline-variant/20"><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Bài viết</th><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Loại</th><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Sessions</th><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Leads</th><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">AI Citation</th></tr></thead>
+          <tbody class="divide-y divide-outline-variant/10">
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">Hướng dẫn AI Marketing 2025</td><td class="py-3"><span class="chip-blue text-[10px] px-2 py-0.5 rounded-full font-bold">Blog</span></td><td class="py-3 font-semibold">124,500</td><td class="py-3 font-bold text-green-600">2,410</td><td class="py-3"><span class="chip-green text-[10px] px-2 py-0.5 rounded-full font-bold">✓ GPT + SGE</span></td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">Performance Marketing Landing Page</td><td class="py-3"><span class="chip-yellow text-[10px] px-2 py-0.5 rounded-full font-bold">Landing</span></td><td class="py-3 font-semibold">82,100</td><td class="py-3 font-bold text-green-600">5,200</td><td class="py-3 text-outline text-xs">—</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">SEO Future 2025 Whitepaper</td><td class="py-3"><span class="chip-green text-[10px] px-2 py-0.5 rounded-full font-bold">Gated</span></td><td class="py-3 font-semibold">45,300</td><td class="py-3 font-bold text-green-600">1,850</td><td class="py-3"><span class="chip-green text-[10px] px-2 py-0.5 rounded-full font-bold">✓ GPT</span></td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">Case Study: Ecommerce ROAS 8x</td><td class="py-3"><span class="chip-blue text-[10px] px-2 py-0.5 rounded-full font-bold">Case Study</span></td><td class="py-3 font-semibold">38,600</td><td class="py-3 font-bold text-green-600">980</td><td class="py-3 text-outline text-xs">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: LEADS ══════════════ -->
+    <div id="page-leads" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div><h1 class="font-lexend text-2xl font-bold">Lead Generation</h1><p class="text-outline text-sm mt-1">Pipeline tracking — MQL → SQL → Customer</p></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card-gradient rounded-2xl p-5 text-white"><p class="text-white/70 text-[11px] uppercase tracking-wider font-bold mb-2">Total Leads</p><h3 class="font-lexend text-2xl font-bold">1,250</h3><p class="text-white/80 text-xs mt-1">↑ +12% WoW</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">MQL</p><h3 class="font-lexend text-2xl font-bold">842</h3><p class="text-xs text-outline mt-1">67.4% tổng leads</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">SQL</p><h3 class="font-lexend text-2xl font-bold">408</h3><p class="text-xs text-green-600 font-bold mt-1">48.5% MQL→SQL</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg. CPL</p><h3 class="font-lexend text-2xl font-bold">₫1.02M</h3><p class="text-xs text-green-600 font-bold mt-1">↓ -18% vs target</p></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+        <div class="card rounded-2xl p-6"><h4 class="font-lexend font-bold mb-4">Lead Volume Trend</h4><div class="h-56"><canvas id="leadTrendChart"></canvas></div></div>
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Lead Source Breakdown</h4>
+          <div class="space-y-3">
+            <div><div class="flex justify-between text-sm mb-1"><span class="font-medium">Organic Search</span><span class="font-bold">38% · 475</span></div><div class="progress-bar"><div class="progress-fill bg-primary" style="width:38%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="font-medium">Content / Blog</span><span class="font-bold">24% · 300</span></div><div class="progress-bar"><div class="progress-fill bg-secondary-container" style="width:24%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="font-medium">Google Ads</span><span class="font-bold">18% · 225</span></div><div class="progress-bar"><div class="progress-fill bg-blue-400" style="width:18%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="font-medium">Meta Ads</span><span class="font-bold">12% · 150</span></div><div class="progress-bar"><div class="progress-fill bg-blue-600" style="width:12%"></div></div></div>
+            <div><div class="flex justify-between text-sm mb-1"><span class="font-medium">Social Organic</span><span class="font-bold">8% · 100</span></div><div class="progress-bar"><div class="progress-fill bg-surface-dim" style="width:8%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: FUNNEL ══════════════ -->
+    <div id="page-funnel" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div><h1 class="font-lexend text-2xl font-bold">Conversion Funnel</h1><p class="text-outline text-sm mt-1">Full-funnel analysis — Awareness → Revenue</p></div>
+      <div class="card rounded-2xl p-6">
+        <div class="h-64"><canvas id="funnelChart"></canvas></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+        <div class="card rounded-2xl p-5 text-center"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Impression → Click</p><h3 class="font-lexend text-3xl font-bold text-primary">1.5%</h3><p class="text-xs text-outline mt-1">CTR trung bình all channels</p></div>
+        <div class="card rounded-2xl p-5 text-center"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Click → Lead</p><h3 class="font-lexend text-3xl font-bold text-secondary">5.2%</h3><p class="text-xs text-outline mt-1">Conversion rate landing page</p></div>
+        <div class="card rounded-2xl p-5 text-center"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Lead → Customer</p><h3 class="font-lexend text-3xl font-bold text-green-600">32.6%</h3><p class="text-xs text-outline mt-1">Sales close rate</p></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: AI COPILOT ══════════════ -->
+    <div id="page-ai" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div class="flex justify-between items-end">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#ffce00,#ff9500);">
+              <span class="material-symbols-outlined fill-icon text-black text-xl">auto_awesome</span>
+            </div>
+            <h1 class="font-lexend text-2xl font-bold">AI Copilot</h1>
+          </div>
+          <p class="text-outline text-sm">Phân tích thông minh & gợi ý tối ưu campaign</p>
+        </div>
+        <span class="text-xs bg-ai-yellow text-black font-bold px-3 py-1.5 rounded-full">3 gợi ý mới</span>
+      </div>
+
+      <!-- AI Suggestions -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+        <div class="card rounded-2xl p-6 border-l-4 border-ai-yellow">
+          <div class="flex items-center gap-2 mb-3"><span class="ai-badge text-[10px] font-black text-black px-2 py-0.5 rounded-full uppercase">Budget</span><span class="chip-green text-[10px] px-2 py-0.5 rounded-full font-bold">Ưu tiên cao</span></div>
+          <h4 class="font-lexend font-bold text-on-surface mb-2">Tái phân bổ ngân sách Paid</h4>
+          <p class="text-sm text-on-surface-variant leading-relaxed mb-4">Chuyển ₫50M từ Meta Ads sang Google PMax. Dữ liệu 30 ngày cho thấy Google PMax đang có ROAS 5.2x vs Meta 4.1x. Tối ưu có thể tăng blended ROAS từ 4.8x → 5.3x.</p>
+          <div class="bg-surface-container-low rounded-xl p-3 text-xs space-y-1 mb-4">
+            <div class="flex justify-between"><span class="text-outline">Dự kiến ROAS tăng</span><span class="font-bold text-green-600">+10.4%</span></div>
+            <div class="flex justify-between"><span class="text-outline">Revenue tăng thêm/tháng</span><span class="font-bold text-green-600">~₫260M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Confidence level</span><span class="font-bold">87%</span></div>
+          </div>
+          <button class="w-full py-2.5 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-container transition-colors">Áp dụng gợi ý →</button>
+        </div>
+
+        <div class="card rounded-2xl p-6 border-l-4 border-secondary-container">
+          <div class="flex items-center gap-2 mb-3"><span class="bg-secondary-container/20 text-secondary text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Content</span><span class="chip-blue text-[10px] px-2 py-0.5 rounded-full font-bold">Ưu tiên tb</span></div>
+          <h4 class="font-lexend font-bold text-on-surface mb-2">Update H1 cho AI Snippet</h4>
+          <p class="text-sm text-on-surface-variant leading-relaxed mb-4">Trang "/huong-dan/ai-marketing-2025" đang có CTR thấp hơn dự kiến từ Google AI Overviews. Đổi H1 từ "Hướng dẫn" thành "Cách [action]" format để tăng khả năng được featured.</p>
+          <div class="bg-surface-container-low rounded-xl p-3 text-xs space-y-1 mb-4">
+            <div class="flex justify-between"><span class="text-outline">CTR dự kiến tăng</span><span class="font-bold text-green-600">+1.8%</span></div>
+            <div class="flex justify-between"><span class="text-outline">Traffic tăng thêm/tháng</span><span class="font-bold text-green-600">~8,400</span></div>
+            <div class="flex justify-between"><span class="text-outline">Confidence level</span><span class="font-bold">74%</span></div>
+          </div>
+          <button class="w-full py-2.5 bg-surface-container-high text-on-surface rounded-xl text-xs font-bold hover:bg-surface-container-highest transition-colors">Xem chi tiết →</button>
+        </div>
+
+        <div class="card rounded-2xl p-6 border-l-4 border-orange-400">
+          <div class="flex items-center gap-2 mb-3"><span class="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">SEO</span><span class="chip-yellow text-[10px] px-2 py-0.5 rounded-full font-bold">Opportunity</span></div>
+          <h4 class="font-lexend font-bold text-on-surface mb-2">15 Long-tail Keywords Gap</h4>
+          <p class="text-sm text-on-surface-variant leading-relaxed mb-4">AI phát hiện 15 từ khóa đuôi dài có search volume 500-2000/tháng, competitor yếu (DR &lt;30), và match content hiện có của Seongon. Ước tính rank top 3 trong 4-6 tuần.</p>
+          <div class="bg-surface-container-low rounded-xl p-3 text-xs space-y-1 mb-4">
+            <div class="flex justify-between"><span class="text-outline">Tổng SV/tháng</span><span class="font-bold text-green-600">18,400</span></div>
+            <div class="flex justify-between"><span class="text-outline">Leads dự kiến</span><span class="font-bold text-green-600">~220/tháng</span></div>
+            <div class="flex justify-between"><span class="text-outline">Confidence level</span><span class="font-bold">82%</span></div>
+          </div>
+          <button class="w-full py-2.5 bg-surface-container-high text-on-surface rounded-xl text-xs font-bold hover:bg-surface-container-highest transition-colors">Xem danh sách →</button>
+        </div>
+      </div>
+
+      <!-- AI Chat -->
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-4">Hỏi AI về Campaign</h4>
+        <div id="ai-chat-messages" class="bg-surface-container-low rounded-xl p-4 mb-4 h-48 overflow-y-auto space-y-3">
+          <div class="flex gap-3">
+            <div class="w-7 h-7 rounded-full bg-ai-yellow flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-black fill-icon text-sm">auto_awesome</span></div>
+            <div class="bg-white rounded-xl p-3 text-sm max-w-lg shadow-sm"><p>Xin chào Thiên! Tôi đã phân tích dữ liệu 30 ngày. Có 3 gợi ý tối ưu đang chờ bạn. Hỏi tôi bất cứ điều gì về campaign performance.</p></div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <input id="ai-input" class="flex-1 bg-surface-container-low border border-outline-variant/50 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-container" placeholder="Ví dụ: Tại sao ROAS Meta thấp hơn Google?" onkeypress="if(event.key==='Enter') sendAI()">
+          <button onclick="sendAI()" class="px-5 py-2.5 rounded-full text-black font-bold text-sm hover:brightness-110 transition-all" style="background:linear-gradient(90deg,#ffce00,#ff9500);">Gửi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: GEO ══════════════ -->
+    <div id="page-geo" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div><h1 class="font-lexend text-2xl font-bold">GEO Performance</h1><p class="text-outline text-sm mt-1">Generative Engine Optimization — AI Search Visibility</p></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card-gradient rounded-2xl p-5 text-white"><p class="text-white/70 text-[11px] uppercase tracking-wider font-bold mb-2">AI Visibility Score</p><h3 class="font-lexend text-3xl font-bold">88</h3><p class="text-white/80 text-xs mt-1">Top 15% in industry</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">ChatGPT Citations</p><h3 class="font-lexend text-2xl font-bold">42.4k</h3><p class="text-xs text-green-600 font-bold mt-1">↑ +18% vs tháng trước</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Google AI Mentions</p><h3 class="font-lexend text-2xl font-bold">15.2k</h3><p class="text-xs text-green-600 font-bold mt-1">82% query appearance</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Brand Sentiment AI</p><h3 class="font-lexend text-2xl font-bold">92%</h3><p class="text-xs text-green-600 font-bold mt-1">Highly Positive</p></div>
+      </div>
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-4">AI Visibility Trend — 90 ngày</h4>
+        <div class="h-56"><canvas id="geoChart"></canvas></div>
+      </div>
+    </div>
+
+  </div><!-- end pt-[68px] -->
+</main>
+
+<!-- FAB -->
+<button onclick="showPage('ai')" class="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-black hover:scale-110 active:scale-95 transition-all z-50" style="background:linear-gradient(135deg,#ffce00,#ff9500);">
+  <span class="material-symbols-outlined fill-icon text-2xl">auto_awesome</span>
+</button>
+
+<script>
+// ──── Auth – Email OTP ────
+let otpChallenge = '';
+
+function _loginOverlay(show) {
+  document.getElementById('login-overlay').style.display = show ? 'flex' : 'none';
+}
+
+function _showStep(n) {
+  document.getElementById('login-step-1').style.display = n === 1 ? 'flex' : 'none';
+  document.getElementById('login-step-2').style.display = n === 2 ? 'block' : 'none';
+}
+
+function _setErr(msg, step) {
+  const el = document.getElementById(step === 2 ? 'otp-error' : 'login-error');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function backToStep1() {
+  _setErr('', 1); _setErr('', 2);
+  document.querySelectorAll('.otp-input').forEach(inp => { inp.value = ''; inp.style.borderColor = '#c3c5d9'; });
+  _showStep(1);
+}
+
+async function handleContinue() {
+  const emailEl = document.getElementById('login-email');
+  const email = (emailEl ? emailEl.value : '').trim().toLowerCase();
+  _setErr('', 1);
+  if (!email) { _setErr('Please enter your email address.', 1); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _setErr('Please enter a valid email address.', 1); return; }
+
+  const btn = document.getElementById('login-send-btn');
+  const txt = document.getElementById('login-btn-text');
+  btn.disabled = true; btn.style.opacity = '0.7'; txt.textContent = 'Sending code…';
+
+  try {
+    const res = await fetch('/api/request-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.challenge) {
+      throw new Error(data.error || 'Could not send the verification code.');
+    }
+    otpChallenge = data.challenge;
+    btn.disabled = false; btn.style.opacity = '1'; txt.textContent = 'Continue';
+    _showStep(2);
+    const first = document.querySelector('.otp-input');
+    if (first) first.focus();
+  } catch (err) {
+    btn.disabled = false; btn.style.opacity = '1'; txt.textContent = 'Continue';
+    _setErr(err.message || 'Could not send the verification code. Please try again.', 1);
+  }
+}
+
+function _getOtpValue() {
+  return Array.from(document.querySelectorAll('.otp-input')).map(inp => inp.value).join('');
+}
+
+async function handleVerifyOtp() {
+  const otp = _getOtpValue();
+  _setErr('', 2);
+  if (otp.length < 6) { _setErr('Please enter all 6 digits.', 2); return; }
+  if (!otpChallenge) { _setErr('Please request a new verification code.', 2); return; }
+
+  const btn = document.getElementById('verify-btn');
+  const txt = document.getElementById('verify-btn-text');
+  btn.disabled = true; btn.style.opacity = '0.7'; txt.textContent = 'Verifying…';
+
+  try {
+    const email = (document.getElementById('login-email').value || '').trim().toLowerCase();
+    const res = await fetch('/api/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp, challenge: otpChallenge })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'Incorrect or expired code.');
+    }
+    sessionStorage.setItem('authUser', email);
+    otpChallenge = '';
+    _loginOverlay(false);
+    setTimeout(() => initCharts('dashboard'), 50);
+  } catch (err) {
+    btn.disabled = false; btn.style.opacity = '1'; txt.textContent = 'Verify & Login';
+    _setErr(err.message || 'Incorrect or expired code.', 2);
+    const container = document.getElementById('otp-container');
+    container.style.animation = 'shake 0.4s ease';
+    setTimeout(() => { container.style.animation = ''; }, 400);
+    document.querySelectorAll('.otp-input').forEach(inp => { inp.style.borderColor = '#ba1a1a'; });
+  }
+}
+
+function handleSignOut() {
+  sessionStorage.removeItem('authUser');
+  otpChallenge = '';
+  const emailEl = document.getElementById('login-email');
+  if (emailEl) emailEl.value = '';
+  backToStep1();
+  _loginOverlay(true);
+}
+
+// OTP inputs: auto-advance, backspace, paste, Enter
+document.addEventListener('DOMContentLoaded', function() {
+  _showStep(1); // always start on email screen
+  const inputs = Array.from(document.querySelectorAll('.otp-input'));
+  inputs.forEach((input, i) => {
+    input.addEventListener('input', function() {
+      this.value = this.value.replace(/\D/, '');
+      this.style.borderColor = this.value ? '#0037b7' : '#c3c5d9';
+      if (this.value && i < inputs.length - 1) inputs[i + 1].focus();
+      if (_getOtpValue().length === 6) setTimeout(handleVerifyOtp, 120);
+    });
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && !this.value && i > 0) {
+        inputs[i - 1].focus(); inputs[i - 1].value = '';
+        inputs[i - 1].style.borderColor = '#c3c5d9';
+      }
+      if (e.key === 'Enter') handleVerifyOtp();
+    });
+    input.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+      pasted.split('').forEach((ch, idx) => {
+        if (inputs[i + idx]) { inputs[i + idx].value = ch; inputs[i + idx].style.borderColor = '#0037b7'; }
+      });
+      const next = Math.min(i + pasted.length, inputs.length - 1);
+      inputs[next].focus();
+      if (_getOtpValue().length === 6) setTimeout(handleVerifyOtp, 120);
+    });
+  });
+
+  // Check session on load
+  if (sessionStorage.getItem('authUser')) {
+    _loginOverlay(false);
+    setTimeout(() => initCharts('dashboard'), 50);
+  } else {
+    _loginOverlay(true);
+  }
+});
+
+// ──── Navigation ────
+const pages = ['dashboard','seo','paid','social','content','leads','funnel','ai','geo'];
+const pageTitles = {
+  dashboard: 'Marketing Dashboard', seo: 'SEO Analytics', paid: 'Paid Media',
+  social: 'Social Media', content: 'Content Performance', leads: 'Lead Generation',
+  funnel: 'Conversion Funnel', ai: 'AI Copilot', geo: 'GEO Performance'
+};
+
+function showPage(name) {
+  pages.forEach(p => {
+    document.getElementById('page-' + p)?.classList.remove('active');
+    document.querySelector(`[data-page="${p}"]`)?.classList.remove('nav-active');
+    document.querySelector(`[data-page="${p}"]`)?.classList.add('text-slate-300');
+  });
+  const el = document.getElementById('page-' + name);
+  if (el) { el.classList.add('active'); el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in'); }
+  const btn = document.querySelector(`[data-page="${name}"]`);
+  if (btn) { btn.classList.add('nav-active'); btn.classList.remove('text-slate-300'); }
+  document.getElementById('page-title').textContent = pageTitles[name] || 'Dashboard';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Lazy init charts
+  setTimeout(() => initCharts(name), 50);
+}
+
+// ──── Chart.js helpers ────
+const chartInstances = {};
+function makeChart(id, type, labels, datasets, opts = {}) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); }
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  chartInstances[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 600 },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a2e4a', titleFont: { family: 'Inter', size: 12 }, bodyFont: { family: 'Inter', size: 11 }, padding: 10, cornerRadius: 8 }, ...opts.plugins },
+      scales: opts.scales || (type === 'doughnut' || type === 'bar' && opts.horizontal ? {} : {
+        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } },
+        y: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } }
+      }),
+      ...opts
+    }
+  });
+}
+
+const days30 = ['1/4','5/4','10/4','15/4','20/4','25/4','30/4','5/5','10/5'];
+
+function initCharts(page) {
+  if (page === 'dashboard' || page === undefined) {
+    makeChart('multiChannelChart', 'line', days30, [
+      { label: 'Organic', data: [14000,18000,16500,22000,19000,28000,24000,32000,30000], borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#0037b7' },
+      { label: 'Paid', data: [8000,9500,8800,11000,10200,13000,11500,15000,14000], borderColor: '#19d1ff', backgroundColor: 'rgba(25,209,255,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#19d1ff' },
+      { label: 'AI', data: [2000,3500,4000,5200,6000,7800,8500,10000,12000], borderColor: '#ffce00', backgroundColor: 'rgba(255,206,0,0.06)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#ffce00' },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } } });
+
+    makeChart('trafficDonut', 'doughnut', ['Organic', 'AI Search', 'Paid', 'Direct'],
+      [{ data: [45, 32, 12, 11], backgroundColor: ['#0037b7', '#19d1ff', '#b22b01', '#cbdbf5'], borderWidth: 0, hoverOffset: 6 }],
+      { scales: {}, cutout: '70%', plugins: { legend: { display: false } } });
+  }
+
+  if (page === 'seo') {
+    makeChart('seoTrendChart', 'line', days30, [
+      { label: 'Sessions', data: [38000,42000,40000,55000,52000,68000,64000,78000,74000], borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.08)', fill: true, tension: 0.4, pointRadius: 3 }
+    ]);
+    makeChart('keywordDistChart', 'bar', ['Top 1-3', 'Top 4-10', 'Top 11-20', 'Top 21-50', '50+'],
+      [{ data: [248, 1000, 1800, 3200, 8400], backgroundColor: ['#0037b7', '#19d1ff', '#b8c4ff', '#dde1ff', '#e5eeff'], borderRadius: 6 }],
+      { scales: { x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } }, y: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } } } });
+  }
+
+  if (page === 'paid') {
+    makeChart('roasChart', 'line', days30, [
+      { label: 'Google', data: [4.8,5.1,4.9,5.3,5.0,5.4,5.2,5.6,5.2], borderColor: '#0037b7', tension: 0.4, pointRadius: 3, fill: false },
+      { label: 'Meta', data: [3.8,4.0,3.9,4.2,4.0,4.3,4.1,4.5,4.1], borderColor: '#1877f2', tension: 0.4, pointRadius: 3, fill: false },
+      { label: 'TikTok', data: [3.4,3.6,3.5,3.8,3.7,4.0,3.8,4.2,3.9], borderColor: '#000', tension: 0.4, pointRadius: 3, fill: false },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } } });
+  }
+
+  if (page === 'social') {
+    makeChart('socialEngChart', 'bar', days30, [
+      { label: 'Facebook', data: [420,380,510,490,620,580,710,670,740], backgroundColor: '#1877f2', borderRadius: 4, borderSkipped: false },
+      { label: 'LinkedIn', data: [180,210,240,220,280,260,310,295,320], backgroundColor: '#0077b5', borderRadius: 4, borderSkipped: false },
+      { label: 'TikTok', data: [350,290,480,420,560,520,640,600,680], backgroundColor: '#000', borderRadius: 4, borderSkipped: false },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } }, y: { stacked: true, grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } } } });
+  }
+
+  if (page === 'leads') {
+    makeChart('leadTrendChart', 'line', days30, [
+      { label: 'Leads', data: [38,45,42,58,54,72,68,85,80], borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.08)', fill: true, tension: 0.4, pointRadius: 3 },
+      { label: 'MQL', data: [26,30,28,40,37,49,46,57,54], borderColor: '#19d1ff', backgroundColor: 'rgba(25,209,255,0.05)', fill: true, tension: 0.4, pointRadius: 3 },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } } });
+  }
+
+  if (page === 'funnel') {
+    makeChart('funnelChart', 'bar', ['Impressions', 'Clicks', 'Leads', 'MQL', 'SQL', 'Customers'],
+      [{ data: [17200000, 258000, 13400, 842, 408, 133], backgroundColor: ['#0037b7','#1a48d0','#3460e8','#19d1ff','#00677f','#004aef'], borderRadius: 6 }],
+      { indexAxis: 'y', scales: { x: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688', callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v }, border: { display: false } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12, weight: '600' }, color: '#0b1c30' } } } });
+  }
+
+  if (page === 'geo') {
+    const geo90 = Array.from({length:12}, (_,i) => `T${i+1}`);
+    makeChart('geoChart', 'line', geo90, [
+      { label: 'ChatGPT', data: [22000,25000,28000,30000,33000,35000,37000,38500,40000,41000,41800,42400], borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.06)', fill: true, tension: 0.4, pointRadius: 3 },
+      { label: 'Google AI', data: [5000,6500,7800,9200,10500,11800,12600,13400,14000,14600,14900,15200], borderColor: '#ffce00', backgroundColor: 'rgba(255,206,0,0.04)', fill: true, tension: 0.4, pointRadius: 3 },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } } });
+  }
+}
+
+// ──── Date Range ────
+function updateDateRange() {
+  // Trigger chart refresh with subtle animation
+  const p = document.querySelector('.page.active')?.id?.replace('page-','');
+  if (p) initCharts(p);
+}
+
+// ──── AI Chat ────
+const aiResponses = {
+  default: ["Tôi cần thêm dữ liệu để trả lời chính xác hơn. Bạn có thể hỏi cụ thể về Google Ads, Meta, TikTok, hoặc SEO performance?", "Câu hỏi hay! Dựa trên dữ liệu 30 ngày, tôi thấy xu hướng tích cực nhưng cần xem thêm attribution model để đưa ra kết luận chắc chắn."],
+  roas: ["ROAS Meta (4.1x) thấp hơn Google (5.2x) vì: 1) Audience targeting ít chính xác hơn cho B2B, 2) Funnel dài hơn — Meta thường awareness stage, Google closer to purchase intent. Gợi ý: Dùng Meta cho retargeting thay vì top-of-funnel cold traffic."],
+  seo: ["SEO đang perform tốt nhất trong các kênh với Content ROAS 12.4x. Trang /huong-dan/ai-marketing-2025 có tiềm năng tăng thêm 30% traffic nếu tối ưu cho AI Overviews. Ưu tiên E-E-A-T signals."],
+  budget: ["Dựa trên ROAS data: Nên tăng budget Google Ads (+₫50M), giữ TikTok (growing channel), cân nhắc giảm Meta cold traffic và chuyển sang retargeting-only. Target blended ROAS 5.3x+."],
+  tiktok: ["TikTok Ads đang grow với ROAS 3.9x — thấp nhất nhưng tăng nhanh nhất (+28% WoW). Platform phù hợp brand awareness B2C. Gợi ý: Test Spark Ads với organic content đang viral để giảm CPM ~20%."],
+};
+
+function sendAI() {
+  const input = document.getElementById('ai-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const container = document.getElementById('ai-chat-messages');
+
+  // User bubble
+  container.innerHTML += `<div class="flex gap-3 justify-end"><div class="bg-primary text-white rounded-xl p-3 text-sm max-w-sm">${msg}</div></div>`;
+  input.value = '';
+  container.scrollTop = container.scrollHeight;
+
+  // AI response
+  setTimeout(() => {
+    const lower = msg.toLowerCase();
+    let response = aiResponses.default[Math.floor(Math.random() * aiResponses.default.length)];
+    if (lower.includes('roas') || lower.includes('meta') || lower.includes('return')) response = aiResponses.roas[0];
+    else if (lower.includes('seo') || lower.includes('organic')) response = aiResponses.seo[0];
+    else if (lower.includes('budget') || lower.includes('ngân sách') || lower.includes('phân bổ')) response = aiResponses.budget[0];
+    else if (lower.includes('tiktok')) response = aiResponses.tiktok[0];
+    container.innerHTML += `<div class="flex gap-3"><div class="w-7 h-7 rounded-full bg-ai-yellow flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-black fill-icon text-sm">auto_awesome</span></div><div class="bg-white rounded-xl p-3 text-sm max-w-lg shadow-sm leading-relaxed">${response}</div></div>`;
+    container.scrollTop = container.scrollHeight;
+  }, 800);
+}
+
+// ──── Init ────
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts('dashboard');
+});
+</script>
+</body>
+</html>

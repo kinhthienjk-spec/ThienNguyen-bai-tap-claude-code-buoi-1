@@ -1,0 +1,676 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SEONGON AI - Marketing Intelligence Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#0037b7",
+                        "on-background": "#0b1c30",
+                        "inverse-surface": "#213145",
+                        "outline": "#747688",
+                        "primary-container": "#004aef",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#0037b9",
+                        "on-secondary-fixed": "#001f28",
+                        "tertiary-fixed": "#ffdbd2",
+                        "on-secondary-container": "#00566b",
+                        "on-tertiary-fixed-variant": "#891e00",
+                        "tertiary-fixed-dim": "#ffb4a1",
+                        "secondary-fixed-dim": "#4dd6ff",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#b8c4ff",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#0b1c30",
+                        "on-tertiary-fixed": "#3c0800",
+                        "surface-container-low": "#eff4ff",
+                        "outline-variant": "#c3c5d9",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#dde1ff",
+                        "tertiary": "#881e00",
+                        "surface-tint": "#024bef",
+                        "secondary": "#00677f",
+                        "on-primary-container": "#cfd6ff",
+                        "surface-container-high": "#dce9ff",
+                        "tertiary-container": "#b22b01",
+                        "on-tertiary-container": "#ffcdc0",
+                        "on-secondary-fixed-variant": "#004e60",
+                        "background": "#f8f9ff",
+                        "surface-container": "#e5eeff",
+                        "on-primary-fixed": "#001453",
+                        "surface-bright": "#f8f9ff",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#b8c4ff",
+                        "on-surface-variant": "#434656",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-fixed": "#b7eaff",
+                        "secondary-container": "#19d1ff",
+                        "surface": "#f8f9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.25rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar-width": "280px",
+                        "gutter": "24px",
+                        "container-padding": "32px",
+                        "unit": "4px",
+                        "card-gap": "20px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Lexend"],
+                        "display-md": ["Lexend"],
+                        "headline-lg": ["Lexend"],
+                        "headline-md": ["Lexend"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "display-md": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+        .sidebar-active-gradient {
+            background: linear-gradient(90deg, rgba(25, 209, 255, 0.15) 0%, rgba(25, 209, 255, 0) 100%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+<!-- SideNavBar -->
+<aside class="bg-inverse-surface dark:bg-on-background w-sidebar-width h-full fixed left-0 top-0 border-r border-outline-variant/10 shadow-[0px_4px_20px_rgba(0,26,77,0.15)] flex flex-col h-screen py-6 px-4 gap-2 z-50">
+<div class="flex items-center gap-3 mb-8 px-2">
+<div class="w-10 h-10 bg-secondary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed" style="font-variation-settings: &quot;FILL&quot; 1;">hub</span>
+</div>
+<div>
+<h1 class="font-display-md text-headline-md font-bold text-on-primary-fixed leading-none">SEONGON AI</h1>
+<p class="text-[10px] text-surface-variant/60 uppercase tracking-widest font-semibold mt-1">Marketing Intelligence</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 bg-white/10 dark:bg-primary/20 text-secondary-fixed-dim font-medium rounded-lg border-l-4 border-secondary-container shadow-[0_0_15px_rgba(25,209,255,0.3)] transition-all duration-300 ease-in-out active:scale-95">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span class="font-body-md">SEO Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-body-md">AI Search Visibility</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-body-md">GEO Performance</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-body-md">Paid Media</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+<span class="font-body-md">Social Media</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-body-md">Content Performance</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="font-body-md">Lead Generation</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="filter_alt">filter_alt</span>
+<span class="font-body-md">Conversion Funnel</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-surface-variant/80 hover:text-white hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="compare_arrows">compare_arrows</span>
+<span class="font-body-md">Competitor Tracking</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-white/10 flex flex-col gap-3">
+<div class="flex items-center gap-3 px-2 py-3 mb-2 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer">
+    <img src="https://lh3.googleusercontent.com/aida/ADBb0uj15ybkz-7K0_cZdkaXPZcYm-aKfqokaO368LPanjhGMDI_CIAdeEsYT71cNH5WVPQjDaEm159NfUEkSf4TTfXIUWcGq_2SxHPyzkJ-FY9pTQtjBeQuhirXz6algt8nFMHw8qmH5I5MWWGevtcZC0WeJGaA-bYDz94A2CX82dEwsUtQ8KiGtt6Nl5p6E2gBB1JynbDN-1Ihwf1TT5CMX7otQM9MjSZWoKlc32NoFi6HfU9pCx59A2F-P7esHhRPiR83ej3O0RTB_ys" alt="Profile" class="w-10 h-10 rounded-full border border-white/20">
+    <div class="flex-1 min-w-0">
+        <p class="text-white font-semibold text-sm truncate">Thiên Nguyễn</p>
+        <p class="text-surface-variant/60 text-[10px] truncate">CMO</p>
+    </div>
+    <span class="material-symbols-outlined text-surface-variant/60 text-sm">more_vert</span>
+</div>
+<a class="flex items-center gap-3 px-4 py-2 text-surface-variant/60 hover:text-white" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-sidebar-width min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-280px)] z-40 bg-surface/80 dark:bg-on-background/80 backdrop-blur-xl border-b border-outline-variant/10 shadow-[0px_10px_30px_rgba(0,0,0,0.05)] flex justify-between items-center px-gutter py-4 h-20">
+<div class="flex items-center gap-6 flex-1">
+<h2 class="font-display-md text-headline-md font-black text-on-surface dark:text-inverse-on-surface whitespace-nowrap">SEONGON AI Marketing</h2>
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-12 pr-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-full text-sm focus:ring-2 focus:ring-secondary-container focus:border-transparent transition-all" placeholder="Search analytics, leads or reports..." type="text">
+</div>
+</div>
+<div class="flex items-center gap-4 ml-gutter">
+<button class="px-5 py-2 bg-primary text-white rounded-lg font-bold text-sm shadow-md hover:bg-primary-container transition-all active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-base" style="font-variation-settings: &quot;FILL&quot; 1;">auto_awesome</span>
+                    AI Insights
+                </button>
+<div class="h-8 w-[1px] bg-outline-variant/30"></div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-outline hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-outline hover:bg-surface-container-high rounded-full transition-all">
+<span class="material-symbols-outlined" data-icon="apps">apps</span>
+</button>
+</div>
+<img alt="User Profile" class="w-10 h-10 rounded-full border-2 border-primary-container/20 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg-LT1aqrIUyipfAwDZ2t0J8PRPhqrKIgjx0H9J6eyl8iBx8CYoI99lm65p11xfOb5Bx3q5FPAmzSwQvuYv65xnUygV3EjKy05fkOiyGzv8rBO1udkCcgk04SpajKRIBpTkDROGgiyTSqxJdW6qKVlKdjWGgvvAKc2-VD4AyS-x26N1wNtqbXDm8vRz639z0xGG0S4Fq3EdskjXpt294dt8ZeSie2vsDnUuchHSiCU3g1Y6KgS6IT2wauna8mIWi-PQcymjUU7nfoV">
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="pt-24 px-gutter pb-gutter space-y-card-gap">
+<!-- Welcome Header -->
+<div class="flex justify-between items-end mb-4">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface">Marketing Dashboard</h1>
+<p class="text-outline mt-1 font-body-lg">Real-time intelligence and campaign performance overview.</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-4 py-2 bg-surface-container-high border border-outline-variant rounded-lg text-sm font-semibold text-on-surface-variant hover:bg-surface-container-highest transition-all">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+                        Last 30 Days
+                    </button>
+<button class="p-2 bg-surface-container-high border border-outline-variant rounded-lg hover:bg-surface-container-highest transition-all">
+<span class="material-symbols-outlined text-[20px]">file_download</span>
+</button>
+</div>
+</div>
+<!-- Row 1: KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-card-gap">
+<!-- Organic Traffic -->
+<div class="bg-gradient-to-br from-primary to-primary-container p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,55,183,0.2)] text-white relative overflow-hidden group">
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined p-2 bg-white/20 rounded-lg">trending_up</span>
+<span class="text-sm font-bold bg-white/20 px-2 py-0.5 rounded">+25.2%</span>
+</div>
+<p class="text-white/80 font-semibold mb-1 uppercase tracking-wider text-[11px]">Organic Traffic Value</p>
+<h3 class="font-display-md text-display-md font-bold mb-4">$420,280.21</h3>
+<div class="flex items-center gap-2">
+<div class="h-10 w-full flex items-end gap-1">
+<div class="w-1/10 bg-white/30 h-1/2 rounded-t-sm"></div>
+<div class="w-1/10 bg-white/40 h-3/4 rounded-t-sm"></div>
+<div class="w-1/10 bg-white/50 h-2/3 rounded-t-sm"></div>
+<div class="w-1/10 bg-white/60 h-full rounded-t-sm"></div>
+<div class="w-1/10 bg-white/40 h-2/3 rounded-t-sm"></div>
+</div>
+</div>
+</div>
+<div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+</div>
+<!-- AI Search Visibility -->
+<div class="bg-white p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,26,77,0.05)] border border-outline-variant/30 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined p-2 bg-secondary-container/20 text-secondary rounded-lg" style="font-variation-settings: &quot;FILL&quot; 1;">auto_awesome</span>
+<span class="text-sm font-bold text-secondary">AI Optimization</span>
+</div>
+<p class="text-outline font-semibold mb-1 uppercase tracking-wider text-[11px]">Visibility Score</p>
+<h3 class="font-display-md text-headline-lg font-bold text-on-surface">88 / 100</h3>
+</div>
+<div class="mt-4 space-y-3">
+<div class="flex justify-between text-xs">
+<span class="text-outline">ChatGPT Mention</span>
+<span class="font-bold text-on-surface">42.4k</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+<div class="bg-secondary-container h-full w-[82%]" style="box-shadow: 0 0 8px rgba(25,209,255,0.5)"></div>
+</div>
+<div class="flex justify-between text-xs">
+<span class="text-outline">Google SGE (AI Overviews)</span>
+<span class="font-bold text-on-surface">15.2k</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full w-[65%]"></div>
+</div>
+</div>
+</div>
+<!-- Leads Generated -->
+<div class="bg-white p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,26,77,0.05)] border border-outline-variant/30">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined p-2 bg-tertiary-fixed-dim/40 text-tertiary rounded-lg">person_add</span>
+<span class="text-sm font-bold text-tertiary">+12% WoW</span>
+</div>
+<p class="text-outline font-semibold mb-1 uppercase tracking-wider text-[11px]">Leads Generated</p>
+<h3 class="font-display-md text-display-md font-bold text-on-surface">1,250,422</h3>
+<div class="grid grid-cols-2 gap-4 mt-4">
+<div>
+<p class="text-[10px] text-outline font-bold uppercase">MQLs</p>
+<p class="text-body-lg font-bold">12.5k</p>
+</div>
+<div>
+<p class="text-[10px] text-outline font-bold uppercase">SQLs</p>
+<p class="text-body-lg font-bold">4.2k</p>
+</div>
+</div>
+</div>
+<!-- Ad Spend ROAS -->
+<div class="bg-white p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,26,77,0.05)] border border-outline-variant/30 relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined p-2 bg-surface-container text-on-surface-variant rounded-lg">payments</span>
+<div class="flex flex-col items-end">
+<span class="text-sm font-bold text-on-surface">4.8x ROAS</span>
+<span class="text-[10px] text-secondary font-bold">Target: 5.0x</span>
+</div>
+</div>
+<p class="text-outline font-semibold mb-1 uppercase tracking-wider text-[11px]">Total Ad Spend</p>
+<h3 class="font-display-md text-display-md font-bold text-on-surface">$85.2k</h3>
+<div class="mt-4 flex gap-1 h-8 items-end">
+<div class="bg-primary/20 w-full h-1/2 rounded-sm"></div>
+<div class="bg-primary/40 w-full h-3/4 rounded-sm"></div>
+<div class="bg-primary/60 w-full h-full rounded-sm"></div>
+<div class="bg-primary/30 w-full h-2/3 rounded-sm"></div>
+<div class="bg-primary/80 w-full h-5/6 rounded-sm"></div>
+</div>
+</div>
+</div>
+<!-- Row 2: Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+<!-- Multi-channel Analytics -->
+<div class="lg:col-span-2 bg-white p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,26,77,0.05)] border border-outline-variant/30">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h4 class="font-headline-md text-on-surface font-bold">Multi-channel Performance</h4>
+<p class="text-outline text-sm">Aggregated results across SEO, Paid and AI search.</p>
+</div>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-xs font-semibold text-outline">Search</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary-container"></span>
+<span class="text-xs font-semibold text-outline">AI Visibility</span>
+</div>
+</div>
+</div>
+<div class="h-[300px] w-full relative flex items-end justify-between px-4 pb-8 border-b border-outline-variant/10">
+<!-- Simulated Chart Content -->
+<div class="flex flex-col items-center w-1/12 gap-1">
+<div class="w-full bg-surface-container rounded-t-lg h-[120px] relative overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/20 h-full"></div>
+<div class="absolute bottom-0 w-full bg-primary h-[80px]"></div>
+</div>
+<span class="text-[10px] text-outline font-bold mt-2">Mon</span>
+</div>
+<div class="flex flex-col items-center w-1/12 gap-1">
+<div class="w-full bg-surface-container rounded-t-lg h-[160px] relative overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/20 h-full"></div>
+<div class="absolute bottom-0 w-full bg-primary h-[120px]"></div>
+</div>
+<span class="text-[10px] text-outline font-bold mt-2">Tue</span>
+</div>
+<div class="flex flex-col items-center w-1/12 gap-1 relative">
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 bg-on-background text-white p-2 rounded-lg text-[10px] shadow-xl z-20 whitespace-nowrap">
+<p class="font-bold">Wed Performance</p>
+<p class="text-secondary-fixed">AI Reach: +14%</p>
+</div>
+<div class="w-full bg-surface-container rounded-t-lg h-[240px] relative overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/20 h-full"></div>
+<div class="absolute bottom-0 w-full bg-primary h-[200px]"></div>
+<div class="absolute bottom-1/2 w-full h-[40px] bg-secondary-container/50 blur-md"></div>
+</div>
+<span class="text-[10px] text-outline font-bold mt-2">Wed</span>
+</div>
+<div class="flex flex-col items-center w-1/12 gap-1">
+<div class="w-full bg-surface-container rounded-t-lg h-[180px] relative overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/20 h-full"></div>
+<div class="absolute bottom-0 w-full bg-primary h-[140px]"></div>
+</div>
+<span class="text-[10px] text-outline font-bold mt-2">Thu</span>
+</div>
+<div class="flex flex-col items-center w-1/12 gap-1">
+<div class="w-full bg-surface-container rounded-t-lg h-[210px] relative overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/20 h-full"></div>
+<div class="absolute bottom-0 w-full bg-primary h-[170px]"></div>
+</div>
+<span class="text-[10px] text-outline font-bold mt-2">Fri</span>
+</div>
+<div class="flex flex-col items-center w-1/12 gap-1">
+<div class="w-full bg-surface-container rounded-t-lg h-[140px] relative overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/20 h-full"></div>
+<div class="absolute bottom-0 w-full bg-primary h-[100px]"></div>
+</div>
+<span class="text-[10px] text-outline font-bold mt-2">Sat</span>
+</div>
+<div class="flex flex-col items-center w-1/12 gap-1">
+<div class="w-full bg-surface-container rounded-t-lg h-[110px] relative overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary/20 h-full"></div>
+<div class="absolute bottom-0 w-full bg-primary h-[70px]"></div>
+</div>
+<span class="text-[10px] text-outline font-bold mt-2">Sun</span>
+</div>
+</div>
+</div>
+<!-- Traffic Sources -->
+<div class="bg-white p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,26,77,0.05)] border border-outline-variant/30 flex flex-col">
+<h4 class="font-headline-md text-on-surface font-bold mb-1">Traffic Sources</h4>
+<p class="text-outline text-sm mb-6">Channel distribution overview.</p>
+<div class="flex-1 flex flex-col items-center justify-center relative">
+<!-- Custom Donut SVG -->
+<svg class="w-48 h-48 -rotate-90">
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="#eff4ff" stroke-width="24"></circle>
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="#0037b7" stroke-dasharray="502" stroke-dashoffset="150" stroke-linecap="round" stroke-width="24"></circle>
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="#19d1ff" stroke-dasharray="502" stroke-dashoffset="400" stroke-linecap="round" stroke-width="24"></circle>
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="#b22b01" stroke-dasharray="502" stroke-dashoffset="460" stroke-linecap="round" stroke-width="24"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-display-md text-headline-lg font-bold">1.2M</span>
+<span class="text-[10px] text-outline uppercase font-bold">Visits</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-y-3 mt-6">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="text-xs font-semibold text-on-surface">Organic (45%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container"></span>
+<span class="text-xs font-semibold text-on-surface">AI Search (32%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary-container"></span>
+<span class="text-xs font-semibold text-on-surface">Paid (12%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-dim"></span>
+<span class="text-xs font-semibold text-on-surface">Direct (11%)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Row 3: Advanced Funnel & AI Monitoring -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+<!-- Funnel Visualization -->
+<div class="bg-white p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,26,77,0.05)] border border-outline-variant/30 overflow-hidden">
+<div class="flex justify-between items-center mb-8">
+<h4 class="font-headline-md text-on-surface font-bold">Marketing Funnel</h4>
+<span class="text-xs font-bold text-secondary bg-secondary-container/10 px-3 py-1 rounded-full">High Conversion Health</span>
+</div>
+<div class="relative py-4">
+<!-- Funnel Layers -->
+<div class="space-y-4">
+<div class="relative">
+<div class="bg-primary/10 border border-primary/20 rounded-xl p-4 flex justify-between items-center z-10 relative">
+<div class="flex items-center gap-3">
+<span class="text-primary font-bold text-lg">01</span>
+<span class="font-bold text-on-surface">Impressions</span>
+</div>
+<div class="text-right">
+<span class="font-display-md text-headline-md font-bold text-on-surface">17.2M</span>
+<p class="text-[10px] text-outline font-bold">100% REACH</p>
+</div>
+</div>
+<div class="absolute left-1/2 -translate-x-1/2 bottom-[-16px] w-[90%] h-8 bg-gradient-to-b from-primary/10 to-transparent"></div>
+</div>
+<div class="relative mx-4">
+<div class="bg-primary/20 border border-primary/30 rounded-xl p-4 flex justify-between items-center z-10 relative">
+<div class="flex items-center gap-3">
+<span class="text-primary font-bold text-lg">02</span>
+<span class="font-bold text-on-surface">Engagements</span>
+</div>
+<div class="text-right">
+<span class="font-display-md text-headline-md font-bold text-on-surface">2.4M</span>
+<p class="text-[10px] text-primary font-bold">14% CTR</p>
+</div>
+</div>
+<div class="absolute left-1/2 -translate-x-1/2 bottom-[-16px] w-[80%] h-8 bg-gradient-to-b from-primary/20 to-transparent"></div>
+</div>
+<div class="relative mx-8">
+<div class="bg-secondary-container/20 border border-secondary-container/30 rounded-xl p-4 flex justify-between items-center z-10 relative">
+<div class="flex items-center gap-3">
+<span class="text-secondary font-bold text-lg">03</span>
+<span class="font-bold text-on-surface">Leads (MQL)</span>
+</div>
+<div class="text-right">
+<span class="font-display-md text-headline-md font-bold text-on-surface">12.5k</span>
+<p class="text-[10px] text-secondary font-bold">5.2% CONV</p>
+</div>
+</div>
+<div class="absolute left-1/2 -translate-x-1/2 bottom-[-16px] w-[70%] h-8 bg-gradient-to-b from-secondary-container/20 to-transparent"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI Search Monitoring -->
+<div class="bg-white p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,26,77,0.05)] border border-outline-variant/30">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-headline-md text-on-surface font-bold">AI Search Monitoring</h4>
+<div class="flex items-center gap-2 text-outline text-xs">
+<span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                            Live Tracking
+                        </div>
+</div>
+<div class="space-y-6">
+<div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/50">
+<div class="flex justify-between items-center mb-3">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-on-background flex items-center justify-center">
+<span class="text-white text-[10px] font-bold">GPT</span>
+</div>
+<span class="font-bold text-on-surface">ChatGPT Visibility</span>
+</div>
+<span class="text-body-md font-bold text-primary">#1 Citation</span>
+</div>
+<div class="flex justify-between items-center">
+<div class="text-xs text-outline">Sentiment: <span class="text-green-600 font-bold">Highly Positive (92%)</span></div>
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full bg-primary/10 border border-white flex items-center justify-center text-[8px] font-bold">AI</div>
+<div class="w-6 h-6 rounded-full bg-primary/20 border border-white flex items-center justify-center text-[8px] font-bold">+4</div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/50">
+<div class="flex justify-between items-center mb-3">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-secondary-fixed flex items-center justify-center overflow-hidden">
+<img alt="Google" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBX1TXTVUNFIyn2GKTCdlbcw8B53ni9Bgl8qt3Mo0UDLe687qkUzLO--VosyMtaB0qR36gVIYsXff3mUd_hdYdEJznLs5Iec1-DIhW211W0j3z3UYzQ3m9LXgE-fEm3rS3-ZmaSwY5xYbD9Duqzz6q5erY5GU1Ifmc1MjPEjyB4f1ENmqKZCYS03DL7LaqIBr2kdJbpJNM9S5eZF6VghjizPnGtM1jRfDeNk5z2bdCzF5QSJ-4S5aEXL7ybIzSgOjI3GoxD_4F0glo1">
+</div>
+<span class="font-bold text-on-surface">Google Search Generative</span>
+</div>
+<span class="text-body-md font-bold text-primary">82% Appearance</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-1.5 mb-2">
+<div class="bg-primary h-full w-[82%]"></div>
+</div>
+<p class="text-[10px] text-outline">Appearing in "Best Marketing Solutions 2024" queries.</p>
+</div>
+<div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/50 opacity-80">
+<div class="flex justify-between items-center mb-3">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-dim flex items-center justify-center">
+<span class="text-on-surface text-[10px] font-bold">PX</span>
+</div>
+<span class="font-bold text-on-surface">Perplexity AI</span>
+</div>
+<span class="text-body-md font-bold text-outline">Monitoring...</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Row 4: Tables & AI Recommendations -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-card-gap">
+<!-- Top Content Table -->
+<div class="lg:col-span-3 bg-white p-container-padding rounded-2xl shadow-[0px_4px_20px_rgba(0,26,77,0.05)] border border-outline-variant/30">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-headline-md text-on-surface font-bold">Top Performing Content</h4>
+<button class="text-primary font-bold text-sm hover:underline">View All</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="border-b border-outline-variant/30">
+<th class="pb-4 font-bold text-outline text-[11px] uppercase tracking-wider">Page / URL</th>
+<th class="pb-4 font-bold text-outline text-[11px] uppercase tracking-wider">Traffic</th>
+<th class="pb-4 font-bold text-outline text-[11px] uppercase tracking-wider">AI Citations</th>
+<th class="pb-4 font-bold text-outline text-[11px] uppercase tracking-wider">CTR</th>
+<th class="pb-4 font-bold text-outline text-[11px] uppercase tracking-wider text-right">Leads</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr>
+<td class="py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded text-[18px]">article</span>
+<div>
+<p class="font-bold text-on-surface text-sm">/guide/ai-marketing-2024</p>
+<p class="text-[10px] text-outline">Organic Social Focus</p>
+</div>
+</div>
+</td>
+<td class="py-4 text-sm font-semibold">124,500</td>
+<td class="py-4">
+<div class="flex gap-1">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+</td>
+<td class="py-4 text-sm font-bold text-primary">4.2%</td>
+<td class="py-4 text-sm font-bold text-on-surface text-right">2,410</td>
+</tr>
+<tr>
+<td class="py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary bg-secondary/10 p-1.5 rounded text-[18px]">video_library</span>
+<div>
+<p class="font-bold text-on-surface text-sm">/product/enterprise-demo</p>
+<p class="text-[10px] text-outline">Conversion Page</p>
+</div>
+</div>
+</td>
+<td class="py-4 text-sm font-semibold">82,100</td>
+<td class="py-4">
+<div class="flex gap-1">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+</td>
+<td class="py-4 text-sm font-bold text-primary">6.8%</td>
+<td class="py-4 text-sm font-bold text-on-surface text-right">5,200</td>
+</tr>
+<tr>
+<td class="py-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary bg-tertiary/10 p-1.5 rounded text-[18px]">download_for_offline</span>
+<div>
+<p class="font-bold text-on-surface text-sm">/whitepapers/seo-future</p>
+<p class="text-[10px] text-outline">Gated Content</p>
+</div>
+</div>
+</td>
+<td class="py-4 text-sm font-semibold">45,300</td>
+<td class="py-4">
+<div class="flex gap-1">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+</div>
+</td>
+<td class="py-4 text-sm font-bold text-primary">12.4%</td>
+<td class="py-4 text-sm font-bold text-on-surface text-right">1,850</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- AI Recommendations Panel -->
+<div class="bg-on-background p-container-padding rounded-2xl shadow-xl flex flex-col justify-between text-white relative overflow-hidden group">
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-full bg-gradient-to-tr from-secondary-container to-primary flex items-center justify-center animate-pulse">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: &quot;FILL&quot; 1;">auto_awesome</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">AI Copilot</h4>
+<p class="text-[10px] text-secondary-fixed opacity-80">Ready with 3 suggestions</p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors cursor-pointer group/item">
+<div class="flex justify-between items-start mb-1">
+<p class="text-[10px] font-bold text-secondary-fixed-dim uppercase tracking-tighter">Budget Optimization</p>
+<span class="material-symbols-outlined text-[16px] text-secondary-fixed opacity-0 group-hover/item:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+<p class="text-xs text-white/90 leading-relaxed font-medium">Reallocate $5k from Facebook to LinkedIn to boost ROAS by 15%.</p>
+</div>
+<div class="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors cursor-pointer group/item">
+<div class="flex justify-between items-start mb-1">
+<p class="text-[10px] font-bold text-tertiary-fixed-dim uppercase tracking-tighter">Content Update</p>
+<span class="material-symbols-outlined text-[16px] text-tertiary-fixed opacity-0 group-hover/item:opacity-100 transition-opacity">arrow_forward</span>
+</div>
+<p class="text-xs text-white/90 leading-relaxed font-medium">Update "SEO Guide" headings to match new Google AI snippets.</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-3 bg-secondary-container text-on-secondary-fixed font-black rounded-xl text-xs flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 z-10">
+                        APPLY ALL SUGGESTIONS
+                    </button>
+<!-- Decorative background -->
+<div class="absolute -right-20 -top-20 w-48 h-48 bg-primary/20 rounded-full blur-[80px]"></div>
+<div class="absolute -left-10 -bottom-10 w-32 h-32 bg-secondary-container/10 rounded-full blur-[60px]"></div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for AI Insights -->
+<button class="fixed bottom-gutter right-gutter w-16 h-16 bg-primary rounded-full shadow-2xl flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-12 transition-transform" style="font-variation-settings: &quot;FILL&quot; 1;">bolt</span>
+</button>
+
+
+
+
+</body></html>

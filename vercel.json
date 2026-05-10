@@ -1,0 +1,9 @@
+{
+  "outputDirectory": ".",
+  "buildCommand": null,
+  "installCommand": null,
+  "framework": null,
+  "rewrites": [
+    { "source": "/", "destination": "/index-codex.html" }
+  ]
+}
