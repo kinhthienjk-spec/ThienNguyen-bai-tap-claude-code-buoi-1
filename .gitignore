@@ -1,1 +1,6 @@
 .vercel
+.vercel-dev-v3*.log
+.railway-local-v3*.log
+.env.google-ads.local
+.env.facebook-ads.local
+.mcp.json
