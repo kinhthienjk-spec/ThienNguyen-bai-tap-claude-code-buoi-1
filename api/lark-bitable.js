@@ -268,35 +268,37 @@ module.exports = async function larkBitable(req, res) {
       return res.end(JSON.stringify({ tables: tables.map(t => ({ id: t.table_id, name: t.name })) }));
     }
 
-    // Fetch all tables with fields + records in parallel
-    const allTablesData = await Promise.all(tables.map(async t => {
-      const fieldsRes = await larkGet(`/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${t.table_id}/fields`, token);
-      const fields    = fieldsRes.data?.items || [];
-      const records   = await getAllRecords(APP_TOKEN, t.table_id, token);
-      return { id: t.table_id, name: t.name, fields, records };
-    }));
-
-    // Score tables — highest score = most likely leads table
-    function score(table) {
+    // Step 1: fetch fields for all tables sequentially to avoid rate limits
+    function scoreByMeta(name, fields) {
       let s = 0;
-      if (findField(table.fields, STATUS_KEYS)) s += 3;
-      if (findField(table.fields, SOURCE_KEYS)) s += 2;
-      if (findField(table.fields, NAME_KEYS))   s += 1;
-      if (findField(table.fields, DATE_KEYS))   s += 1;
-      s += Math.min(table.records.length / 10, 5); // bigger tables preferred
+      const n = name.toLowerCase();
+      if (/bds|lead|mql|sql|pipeline|khách hàng/.test(n)) s += 6;
+      if (/data tổng|tổng hợp/.test(n)) s += 4;
+      if (findField(fields, STATUS_KEYS)) s += 4;
+      if (findField(fields, SOURCE_KEYS)) s += 3;
+      if (findField(fields, NAME_KEYS))   s += 2;
+      if (findField(fields, DATE_KEYS))   s += 1;
       return s;
     }
 
-    let bestTable = allTablesData[0];
-    allTablesData.forEach(t => { if (score(t) > score(bestTable)) bestTable = t; });
+    const tablesMeta = [];
+    for (const t of tables) {
+      const fieldsRes = await larkGet(`/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${t.table_id}/fields`, token);
+      const fields    = fieldsRes.data?.items || [];
+      tablesMeta.push({ id: t.table_id, name: t.name, fields, score: scoreByMeta(t.name, fields) });
+    }
+    tablesMeta.sort((a, b) => b.score - a.score);
+    const best = tablesMeta[0];
 
-    const leadsData = processLeads(bestTable.records, bestTable.fields);
+    // Step 2: fetch records ONLY for the best table
+    const records   = await getAllRecords(APP_TOKEN, best.id, token);
+    const leadsData = processLeads(records, best.fields);
 
     res.end(JSON.stringify({
       ...leadsData,
-      tableName:  bestTable.name,
-      tableCount: allTablesData.length,
-      allTables:  allTablesData.map(t => ({ id: t.id, name: t.name, count: t.records.length }))
+      tableName:  best.name,
+      tableCount: tables.length,
+      allTables:  tablesMeta.map(t => ({ id: t.id, name: t.name, score: t.score }))
     }));
 
   } catch (err) {
