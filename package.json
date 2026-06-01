@@ -1,0 +1,14 @@
+{
+  "name": "seongon-marketing-dashboard",
+  "version": "3.0.0",
+  "private": true,
+  "description": "SEONGON AI marketing dashboard v3 with Google Ads and Facebook Ads performance reporting.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check api/google-ads-performance.js && node --check api/facebook-ads-session.js && node --check api/facebook-ads-auth.js && node --check api/facebook-ads-performance.js && node --check api/lark-bitable.js && node --check scripts/google-ads-oauth-railway.js",
+    "google-ads:connect": "node scripts/google-ads-oauth-railway.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="vi" class="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEONGON AI – Marketing Intelligence Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary": "#0037b7",
+        "primary-container": "#004aef",
+        "on-primary": "#ffffff",
+        "on-primary-container": "#cfd6ff",
+        "secondary": "#00677f",
+        "secondary-container": "#19d1ff",
+        "on-secondary": "#ffffff",
+        "on-secondary-container": "#00566b",
+        "tertiary": "#881e00",
+        "tertiary-container": "#b22b01",
+        "on-tertiary": "#ffffff",
+        "background": "#f8f9ff",
+        "surface": "#f8f9ff",
+        "surface-dim": "#cbdbf5",
+        "surface-container-lowest": "#ffffff",
+        "surface-container-low": "#eff4ff",
+        "surface-container": "#e5eeff",
+        "surface-container-high": "#dce9ff",
+        "surface-container-highest": "#d3e4fe",
+        "on-surface": "#0b1c30",
+        "on-surface-variant": "#434656",
+        "inverse-surface": "#213145",
+        "inverse-on-surface": "#eaf1ff",
+        "inverse-primary": "#b8c4ff",
+        "outline": "#747688",
+        "outline-variant": "#c3c5d9",
+        "tertiary-fixed-dim": "#ffb4a1",
+        "secondary-fixed-dim": "#4dd6ff",
+        "surface-variant": "#d3e4fe",
+        "secondary-fixed": "#b7eaff",
+        "ai-yellow": "#ffce00",
+      },
+      borderRadius: {
+        DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", "2xl": "1rem", "3xl": "1.25rem", full: "9999px"
+      },
+      spacing: {
+        "sidebar-width": "280px", gutter: "24px", "container-padding": "32px", "card-gap": "20px"
+      },
+      fontFamily: {
+        lexend: ["Lexend", "sans-serif"],
+        inter: ["Inter", "sans-serif"],
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { font-family: 'Inter', sans-serif; }
+  h1, h2, h3, h4, .font-lexend { font-family: 'Lexend', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-family: 'Material Symbols Outlined'; font-style: normal; display: inline-block; line-height: 1; text-transform: none; letter-spacing: normal; word-wrap: normal; white-space: nowrap; direction: ltr; }
+  .fill-icon { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+  /* Sidebar */
+  .sidebar { background: linear-gradient(160deg, #1a2e4a 0%, #0d1f35 60%, #0a1628 100%); }
+  .nav-active { background: rgba(25,209,255,0.12); border-left: 3px solid #19d1ff; color: #4dd6ff; }
+  .nav-item { border-left: 3px solid transparent; }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+
+  /* Cards */
+  .card { background: #fff; border: 1px solid rgba(195,197,217,0.35); box-shadow: 0 4px 20px rgba(0,26,77,0.05); }
+  .card-gradient { background: linear-gradient(135deg, #0037b7 0%, #004aef 100%); box-shadow: 0 4px 24px rgba(0,55,183,0.25); }
+  .card-dark { background: linear-gradient(160deg, #1a2e4a 0%, #0d1f35 100%); }
+  .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(12px); border: 1px solid rgba(226,232,240,0.6); }
+
+  /* Chart tooltip */
+  .chart-tooltip { position: absolute; background: #1a2e4a; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 12px; pointer-events: none; white-space: nowrap; }
+
+  /* Page sections */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Animations */
+  @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .pulse { animation: pulse-dot 2s ease-in-out infinite; }
+  @keyframes fade-in { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+  .fade-in { animation: fade-in 0.3s ease forwards; }
+
+  /* AI panel */
+  .ai-badge { background: linear-gradient(90deg, #ffce00, #ff9500); }
+  .ai-card { border: 1px solid rgba(255,206,0,0.2); background: rgba(255,206,0,0.04); }
+  .ai-card:hover { background: rgba(255,206,0,0.08); border-color: rgba(255,206,0,0.4); }
+
+  /* Progress bar */
+  .progress-bar { height: 6px; border-radius: 999px; background: #e5eeff; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 1s ease; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c3c5d9; border-radius: 3px; }
+
+  /* Status chip */
+  .chip-green { background: #e8f5e9; color: #2e7d32; }
+  .chip-red { background: #ffeaed; color: #c62828; }
+  .chip-blue { background: #e3f2fd; color: #0037b7; }
+  .chip-yellow { background: #fff8e1; color: #e65100; }
+</style>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+
+
+<!-- ═══════════════════════════════════ SIDEBAR ═══════════════════════════════════ -->
+<aside class="sidebar fixed left-0 top-0 w-sidebar-width h-screen flex flex-col py-6 px-4 gap-1 z-50 overflow-y-auto">
+  <!-- Logo -->
+  <div class="flex items-center gap-3 mb-7 px-2">
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#004aef,#19d1ff);">
+      <span class="material-symbols-outlined fill-icon text-white text-xl">hub</span>
+    </div>
+    <div>
+      <h1 class="font-lexend text-base font-bold text-white leading-none tracking-tight">SEONGON AI</h1>
+      <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Marketing Intelligence</p>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 space-y-0.5">
+    <button onclick="showPage('dashboard')" data-page="dashboard" class="nav-item nav-active w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all text-left">
+      <span class="material-symbols-outlined text-xl">dashboard</span> Dashboard
+    </button>
+    <button onclick="showPage('seo')" data-page="seo" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">query_stats</span> SEO Analytics
+    </button>
+    <button onclick="showPage('paid')" data-page="paid" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">payments</span> Paid Media
+    </button>
+    <button onclick="showPage('performance')" data-page="performance" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">monitoring</span> Performance
+    </button>
+    <button onclick="showPage('facebook-ads')" data-page="facebook-ads" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">campaign</span> Facebook Ads
+    </button>
+    <button onclick="showPage('social')" data-page="social" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">share</span> Social Media
+    </button>
+    <button onclick="showPage('content')" data-page="content" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">article</span> Content Performance
+    </button>
+    <button onclick="showPage('leads')" data-page="leads" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">person_add</span> Lead Generation
+    </button>
+    <button onclick="showPage('funnel')" data-page="funnel" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">filter_alt</span> Conversion Funnel
+    </button>
+
+    <div class="pt-3 pb-1 px-4">
+      <p class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">AI Tools</p>
+    </div>
+    <button onclick="showPage('ai')" data-page="ai" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl fill-icon">auto_awesome</span>
+      <span>AI Copilot</span>
+      <span class="ml-auto text-[10px] font-bold bg-ai-yellow text-black px-1.5 py-0.5 rounded-full">3</span>
+    </button>
+    <button onclick="showPage('geo')" data-page="geo" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-300 transition-all text-left">
+      <span class="material-symbols-outlined text-xl">map</span> GEO Performance
+    </button>
+  </nav>
+
+  <!-- User -->
+  <div class="mt-4 pt-4 border-t border-white/10">
+    <div class="flex items-center gap-3 px-2 py-2.5 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors cursor-pointer mb-2">
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center text-white font-bold text-sm">T</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-white font-semibold text-sm truncate">Thiên Nguyễn</p>
+        <p class="text-slate-400 text-[10px] truncate">Marketing Manager</p>
+      </div>
+      <span class="material-symbols-outlined text-slate-400 text-base">more_vert</span>
+    </div>
+    <button class="flex items-center gap-3 px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors w-full">
+      <span class="material-symbols-outlined text-base">settings</span> Settings
+    </button>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════ MAIN ═══════════════════════════════════ -->
+<main class="ml-sidebar-width min-h-screen">
+
+  <!-- TOP BAR -->
+  <header class="fixed top-0 right-0 z-40 flex items-center justify-between px-gutter h-[68px] border-b border-outline-variant/20 bg-surface/90 backdrop-blur-xl" style="width:calc(100% - 280px);">
+    <div class="flex items-center gap-5 flex-1">
+      <h2 id="page-title" class="font-lexend text-lg font-bold text-on-surface whitespace-nowrap">Marketing Dashboard</h2>
+      <div class="relative max-w-xs w-full">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-base">search</span>
+        <input class="w-full pl-9 pr-4 py-2 bg-surface-container-low border border-outline-variant/50 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-secondary-container transition-all" placeholder="Tìm metrics, báo cáo..." type="text">
+      </div>
+    </div>
+    <div class="flex items-center gap-3 ml-4">
+      <!-- Date range -->
+      <div class="flex items-center gap-1 bg-surface-container-high border border-outline-variant/40 rounded-lg px-3 py-1.5 text-sm font-medium text-on-surface-variant cursor-pointer hover:bg-surface-container-highest transition-all">
+        <span class="material-symbols-outlined text-base">calendar_today</span>
+        <select id="date-range" class="bg-transparent border-none outline-none text-sm font-medium cursor-pointer" onchange="updateDateRange()">
+          <option value="7">7 ngày qua</option>
+          <option value="30" selected>30 ngày qua</option>
+          <option value="90">90 ngày qua</option>
+          <option value="365">Năm nay</option>
+        </select>
+      </div>
+      <!-- AI Insights btn -->
+      <button onclick="showPage('ai')" class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-black transition-all hover:brightness-110 active:scale-95" style="background:linear-gradient(90deg,#ffce00,#ffaa00);">
+        <span class="material-symbols-outlined text-base fill-icon">auto_awesome</span> AI Insights
+      </button>
+      <div class="h-7 w-px bg-outline-variant/30"></div>
+      <button class="relative p-2 text-outline hover:bg-surface-container-high rounded-full transition-all">
+        <span class="material-symbols-outlined text-xl">notifications</span>
+        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+      </button>
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-container to-secondary-container flex items-center justify-center text-white font-bold text-sm cursor-pointer">T</div>
+    </div>
+  </header>
+
+  <div class="pt-[68px]">
+
+    <!-- ══════════════ PAGE: DASHBOARD ══════════════ -->
+    <div id="page-dashboard" class="page active px-gutter py-6 space-y-card-gap fade-in">
+
+      <!-- Welcome -->
+      <div class="flex justify-between items-end">
+        <div>
+          <h1 class="font-lexend text-2xl font-bold text-on-surface">Marketing Dashboard</h1>
+          <p class="text-outline text-sm mt-1">Real-time intelligence & campaign performance — Seongon Agency</p>
+        </div>
+        <div class="flex items-center gap-2 text-sm text-outline">
+          <span class="w-2 h-2 rounded-full bg-green-500 pulse"></span>
+          Live · cập nhật 2 phút trước
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <!-- Organic Traffic -->
+        <div class="card-gradient rounded-2xl p-6 text-white relative overflow-hidden">
+          <div class="relative z-10">
+            <div class="flex justify-between items-start mb-4">
+              <span class="material-symbols-outlined p-2 bg-white/20 rounded-lg fill-icon text-xl">trending_up</span>
+              <span class="text-xs font-bold bg-white/20 px-2 py-1 rounded-full">+25.2%</span>
+            </div>
+            <p class="text-white/70 text-[11px] uppercase tracking-widest font-semibold mb-1">Organic Traffic Value</p>
+            <h3 class="font-lexend text-2xl font-bold mb-3">$420,280</h3>
+            <div class="h-8 flex items-end gap-0.5">
+              <div class="bg-white/25 rounded-t w-full" style="height:50%"></div>
+              <div class="bg-white/35 rounded-t w-full" style="height:65%"></div>
+              <div class="bg-white/45 rounded-t w-full" style="height:80%"></div>
+              <div class="bg-white/60 rounded-t w-full" style="height:100%"></div>
+              <div class="bg-white/40 rounded-t w-full" style="height:70%"></div>
+              <div class="bg-white/50 rounded-t w-full" style="height:90%"></div>
+              <div class="bg-white/35 rounded-t w-full" style="height:60%"></div>
+            </div>
+          </div>
+          <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+        </div>
+
+        <!-- AI Visibility -->
+        <div class="card rounded-2xl p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <span class="material-symbols-outlined p-2 bg-secondary-container/20 text-secondary rounded-lg fill-icon text-xl">auto_awesome</span>
+              <span class="text-xs font-bold text-secondary">AI Optimized</span>
+            </div>
+            <p class="text-outline text-[11px] uppercase tracking-widest font-semibold mb-1">AI Visibility Score</p>
+            <h3 class="font-lexend text-2xl font-bold text-on-surface">88 <span class="text-outline text-base font-normal">/ 100</span></h3>
+          </div>
+          <div class="mt-4 space-y-2">
+            <div class="flex justify-between text-xs mb-1"><span class="text-outline">ChatGPT Citations</span><span class="font-bold">42.4k</span></div>
+            <div class="progress-bar"><div class="progress-fill bg-secondary-container" style="width:82%"></div></div>
+            <div class="flex justify-between text-xs mb-1 mt-2"><span class="text-outline">Google AI Overviews</span><span class="font-bold">15.2k</span></div>
+            <div class="progress-bar"><div class="progress-fill bg-primary" style="width:65%"></div></div>
+          </div>
+        </div>
+
+        <!-- Leads -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-start mb-4">
+            <span class="material-symbols-outlined p-2 bg-orange-100 text-orange-600 rounded-lg text-xl">person_add</span>
+            <span class="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">+12% WoW</span>
+          </div>
+          <p class="text-outline text-[11px] uppercase tracking-widest font-semibold mb-1">Leads Generated</p>
+          <h3 class="font-lexend text-2xl font-bold text-on-surface">1,250</h3>
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            <div class="bg-surface-container-low rounded-lg p-2.5">
+              <p class="text-[10px] text-outline font-bold uppercase mb-1">MQLs</p>
+              <p class="font-bold text-sm">842</p>
+            </div>
+            <div class="bg-surface-container-low rounded-lg p-2.5">
+              <p class="text-[10px] text-outline font-bold uppercase mb-1">SQLs</p>
+              <p class="font-bold text-sm">408</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROAS -->
+        <div class="card rounded-2xl p-6 relative overflow-hidden">
+          <div class="flex justify-between items-start mb-4">
+            <span class="material-symbols-outlined p-2 bg-surface-container text-on-surface-variant rounded-lg text-xl">payments</span>
+            <div class="text-right">
+              <span class="text-sm font-bold text-on-surface block">4.8x ROAS</span>
+              <span class="text-[10px] text-secondary font-bold">Target: 5.0x</span>
+            </div>
+          </div>
+          <p class="text-outline text-[11px] uppercase tracking-widest font-semibold mb-1">Total Ad Spend</p>
+          <h3 class="font-lexend text-2xl font-bold text-on-surface">₫1.27B</h3>
+          <div class="mt-3 flex gap-0.5 h-8 items-end">
+            <div class="bg-primary/15 rounded-t w-full" style="height:50%"></div>
+            <div class="bg-primary/30 rounded-t w-full" style="height:70%"></div>
+            <div class="bg-primary/50 rounded-t w-full" style="height:100%"></div>
+            <div class="bg-primary/25 rounded-t w-full" style="height:60%"></div>
+            <div class="bg-primary/70 rounded-t w-full" style="height:85%"></div>
+            <div class="bg-primary/40 rounded-t w-full" style="height:75%"></div>
+          </div>
+          <!-- Target indicator -->
+          <div class="mt-3 flex items-center gap-2">
+            <div class="progress-bar flex-1"><div class="progress-fill bg-primary" style="width:96%"></div></div>
+            <span class="text-[10px] text-outline font-bold">96%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+        <!-- Multi-channel chart -->
+        <div class="card rounded-2xl p-6 lg:col-span-2">
+          <div class="flex justify-between items-start mb-5">
+            <div>
+              <h4 class="font-lexend font-bold text-on-surface">Multi-channel Performance</h4>
+              <p class="text-outline text-xs mt-0.5">Tổng hợp SEO, Paid Media & AI Search</p>
+            </div>
+            <div class="flex gap-3 text-xs">
+              <label class="flex items-center gap-1.5 cursor-pointer"><span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span> Organic</label>
+              <label class="flex items-center gap-1.5 cursor-pointer"><span class="w-2.5 h-2.5 rounded-full bg-secondary-container inline-block"></span> Paid</label>
+              <label class="flex items-center gap-1.5 cursor-pointer"><span class="w-2.5 h-2.5 rounded-full bg-ai-yellow inline-block"></span> AI</label>
+            </div>
+          </div>
+          <div class="h-56">
+            <canvas id="multiChannelChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Traffic sources donut -->
+        <div class="card rounded-2xl p-6 flex flex-col">
+          <h4 class="font-lexend font-bold text-on-surface mb-0.5">Traffic Sources</h4>
+          <p class="text-outline text-xs mb-4">Phân bổ kênh tháng này</p>
+          <div class="flex-1 relative flex items-center justify-center">
+            <canvas id="trafficDonut" style="max-height:180px;"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span class="font-lexend text-xl font-bold">1.2M</span>
+              <span class="text-[10px] text-outline uppercase font-bold">Sessions</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-y-2 mt-4 text-xs">
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span> Organic (45%)</div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-secondary-container inline-block"></span> AI Search (32%)</div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-tertiary-container inline-block"></span> Paid (12%)</div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-surface-dim inline-block"></span> Direct (11%)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 3: Funnel + AI Search Monitor -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+        <!-- Funnel -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h4 class="font-lexend font-bold text-on-surface">Marketing Funnel</h4>
+            <span class="text-xs font-bold text-secondary bg-secondary-container/10 px-3 py-1 rounded-full">Conversion Healthy</span>
+          </div>
+          <div class="space-y-3">
+            <div class="bg-primary/8 border border-primary/15 rounded-xl p-4 flex justify-between items-center" style="background:rgba(0,55,183,0.05);">
+              <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-primary text-white font-bold text-xs flex items-center justify-center">1</span><span class="font-semibold text-sm">Impressions</span></div>
+              <div class="text-right"><span class="font-bold text-on-surface">17.2M</span><p class="text-[10px] text-outline">100% reach</p></div>
+            </div>
+            <div class="flex justify-center"><span class="material-symbols-outlined text-outline-variant text-xl">arrow_downward</span></div>
+            <div class="mx-4 border border-primary/25 rounded-xl p-4 flex justify-between items-center" style="background:rgba(0,55,183,0.08);">
+              <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-primary/70 text-white font-bold text-xs flex items-center justify-center">2</span><span class="font-semibold text-sm">Engagements</span></div>
+              <div class="text-right"><span class="font-bold text-on-surface">2.4M</span><p class="text-[10px] text-primary font-bold">14% CTR</p></div>
+            </div>
+            <div class="flex justify-center"><span class="material-symbols-outlined text-outline-variant text-xl">arrow_downward</span></div>
+            <div class="mx-8 border border-secondary-container/40 rounded-xl p-4 flex justify-between items-center" style="background:rgba(25,209,255,0.06);">
+              <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-secondary text-white font-bold text-xs flex items-center justify-center">3</span><span class="font-semibold text-sm">Leads (MQL)</span></div>
+              <div class="text-right"><span class="font-bold text-on-surface">842</span><p class="text-[10px] text-secondary font-bold">5.2% conv.</p></div>
+            </div>
+            <div class="flex justify-center"><span class="material-symbols-outlined text-outline-variant text-xl">arrow_downward</span></div>
+            <div class="mx-12 border border-green-200 rounded-xl p-4 flex justify-between items-center bg-green-50">
+              <div class="flex items-center gap-3"><span class="w-7 h-7 rounded-full bg-green-600 text-white font-bold text-xs flex items-center justify-center">4</span><span class="font-semibold text-sm">Customers (SQL)</span></div>
+              <div class="text-right"><span class="font-bold text-on-surface">408</span><p class="text-[10px] text-green-700 font-bold">48.5% close</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Search Monitoring -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-center mb-5">
+            <h4 class="font-lexend font-bold text-on-surface">AI Search Monitoring</h4>
+            <div class="flex items-center gap-1.5 text-xs text-outline">
+              <span class="w-2 h-2 rounded-full bg-green-500 pulse inline-block"></span> Live
+            </div>
+          </div>
+          <div class="space-y-3">
+            <!-- ChatGPT -->
+            <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/40">
+              <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-on-surface flex items-center justify-center"><span class="text-white text-[10px] font-bold">GPT</span></div>
+                  <span class="font-semibold text-sm">ChatGPT</span>
+                </div>
+                <span class="chip-blue text-[10px] font-bold px-2 py-1 rounded-full">#1 Citation</span>
+              </div>
+              <div class="text-xs text-outline mb-2">Sentiment: <span class="text-green-600 font-bold">Positive (92%)</span></div>
+              <div class="progress-bar"><div class="progress-fill bg-green-500" style="width:92%"></div></div>
+            </div>
+            <!-- Google SGE -->
+            <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/40">
+              <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">G</div>
+                  <span class="font-semibold text-sm">Google AI Overviews</span>
+                </div>
+                <span class="chip-blue text-[10px] font-bold px-2 py-1 rounded-full">82% appear</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill bg-primary" style="width:82%"></div></div>
+              <p class="text-[10px] text-outline mt-2">Xuất hiện trong "Best Marketing Agency Vietnam 2025"</p>
+            </div>
+            <!-- Perplexity -->
+            <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/40">
+              <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface-variant font-bold text-xs">PX</div>
+                  <span class="font-semibold text-sm">Perplexity AI</span>
+                </div>
+                <span class="chip-yellow text-[10px] font-bold px-2 py-1 rounded-full">Monitoring...</span>
+              </div>
+              <div class="progress-bar"><div class="progress-fill bg-ai-yellow" style="width:38%"></div></div>
+              <p class="text-[10px] text-outline mt-2">38% appearance rate — đang tối ưu</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Top Content + AI Copilot -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-card-gap">
+        <!-- Content Table -->
+        <div class="card rounded-2xl p-6 lg:col-span-3">
+          <div class="flex justify-between items-center mb-5">
+            <h4 class="font-lexend font-bold text-on-surface">Top Performing Content</h4>
+            <button onclick="showPage('content')" class="text-primary text-sm font-bold hover:underline">Xem tất cả →</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="border-b border-outline-variant/20">
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold">Trang / URL</th>
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold">Traffic</th>
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold">AI Citations</th>
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold">CTR</th>
+                  <th class="pb-3 text-[11px] uppercase tracking-wider text-outline font-bold text-right">Leads</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant/10 text-sm">
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary bg-primary/10 p-1.5 rounded text-base">article</span><div><p class="font-semibold">/huong-dan/ai-marketing-2025</p><p class="text-[10px] text-outline">SEO · Top 1 Google</p></div></div></td>
+                  <td class="py-3.5 font-semibold">124,500</td>
+                  <td class="py-3.5"><div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span></div></td>
+                  <td class="py-3.5 font-bold text-primary">4.2%</td>
+                  <td class="py-3.5 font-bold text-right">2,410</td>
+                </tr>
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-secondary bg-secondary/10 p-1.5 rounded text-base">video_library</span><div><p class="font-semibold">/dich-vu/performance-marketing</p><p class="text-[10px] text-outline">Landing Page · Conversion</p></div></div></td>
+                  <td class="py-3.5 font-semibold">82,100</td>
+                  <td class="py-3.5"><div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-outline-variant"></span></div></td>
+                  <td class="py-3.5 font-bold text-primary">6.8%</td>
+                  <td class="py-3.5 font-bold text-right">5,200</td>
+                </tr>
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-tertiary bg-tertiary/10 p-1.5 rounded text-base">download_for_offline</span><div><p class="font-semibold">/tai-lieu/seo-2025-whitepaper</p><p class="text-[10px] text-outline">Gated Content · Lead Gen</p></div></div></td>
+                  <td class="py-3.5 font-semibold">45,300</td>
+                  <td class="py-3.5"><div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-outline-variant"></span></div></td>
+                  <td class="py-3.5 font-bold text-primary">12.4%</td>
+                  <td class="py-3.5 font-bold text-right">1,850</td>
+                </tr>
+                <tr class="hover:bg-surface-container-low/50 transition-colors">
+                  <td class="py-3.5"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-blue-600 bg-blue-50 p-1.5 rounded text-base">cases</span><div><p class="font-semibold">/case-study/ecommerce-roas</p><p class="text-[10px] text-outline">Case Study · Trust builder</p></div></div></td>
+                  <td class="py-3.5 font-semibold">38,600</td>
+                  <td class="py-3.5"><div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-green-500"></span><span class="w-2 h-2 rounded-full bg-outline-variant"></span><span class="w-2 h-2 rounded-full bg-outline-variant"></span></div></td>
+                  <td class="py-3.5 font-bold text-primary">8.1%</td>
+                  <td class="py-3.5 font-bold text-right">980</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AI Copilot -->
+        <div class="card-dark rounded-2xl p-6 flex flex-col text-white relative overflow-hidden">
+          <div class="relative z-10 flex-1">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-9 h-9 rounded-full flex items-center justify-center" style="background:linear-gradient(135deg,#ffce00,#ff9500);">
+                <span class="material-symbols-outlined text-black fill-icon text-lg">auto_awesome</span>
+              </div>
+              <div>
+                <h4 class="font-bold text-sm">AI Copilot</h4>
+                <p class="text-[10px] text-slate-400">3 gợi ý đang chờ</p>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <div class="ai-card p-3 rounded-xl cursor-pointer transition-colors">
+                <p class="text-[10px] font-bold text-ai-yellow uppercase tracking-wider mb-1">Budget</p>
+                <p class="text-xs text-slate-200 leading-relaxed">Chuyển ₫50M từ Facebook sang Google PMax để tăng ROAS 15%.</p>
+              </div>
+              <div class="ai-card p-3 rounded-xl cursor-pointer transition-colors">
+                <p class="text-[10px] font-bold text-secondary-container uppercase tracking-wider mb-1">Content</p>
+                <p class="text-xs text-slate-200 leading-relaxed">Cập nhật H1 "AI Marketing Guide" để match intent mới từ SGE.</p>
+              </div>
+              <div class="ai-card p-3 rounded-xl cursor-pointer transition-colors">
+                <p class="text-[10px] font-bold text-orange-300 uppercase tracking-wider mb-1">SEO</p>
+                <p class="text-xs text-slate-200 leading-relaxed">15 từ khóa đuôi dài có thể rank top 3 trong 30 ngày tới.</p>
+              </div>
+            </div>
+          </div>
+          <button onclick="showPage('ai')" class="w-full mt-4 py-2.5 rounded-xl text-xs font-black flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-95 z-10 relative" style="background:linear-gradient(90deg,#ffce00,#ff9500);color:#000;">
+            XEM TẤT CẢ GỢI Ý
+          </button>
+          <div class="absolute -right-16 -top-16 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: SEO ══════════════ -->
+    <div id="page-seo" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div class="flex justify-between items-end">
+        <div><h1 class="font-lexend text-2xl font-bold">SEO Analytics</h1><p class="text-outline text-sm mt-1">Hiệu suất tìm kiếm organic — Google Search Console + Ahrefs</p></div>
+      </div>
+
+      <!-- SEO KPIs -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Organic Sessions</p>
+          <h3 class="font-lexend text-2xl font-bold">540,200</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ 18.4% vs tháng trước</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg. Position</p>
+          <h3 class="font-lexend text-2xl font-bold">3.2</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ Cải thiện từ 4.8</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Organic CTR</p>
+          <h3 class="font-lexend text-2xl font-bold">4.8%</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ +0.6% vs benchmark</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Keywords Top 10</p>
+          <h3 class="font-lexend text-2xl font-bold">1,248</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ 92 từ khóa mới</p>
+        </div>
+      </div>
+
+      <!-- SEO Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Organic Traffic Trend</h4>
+          <div class="h-56"><canvas id="seoTrendChart"></canvas></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Keyword Position Distribution</h4>
+          <div class="h-56"><canvas id="keywordDistChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Top keywords table -->
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-5">Top Keywords</h4>
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-outline-variant/20">
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Keyword</th>
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Position</th>
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Sessions</th>
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">CTR</th>
+            <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Trend</th>
+          </tr></thead>
+          <tbody class="divide-y divide-outline-variant/10">
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">digital marketing agency vietnam</td><td class="py-3"><span class="chip-green text-xs px-2 py-0.5 rounded-full font-bold">#1</span></td><td class="py-3 font-semibold">28,400</td><td class="py-3 text-primary font-bold">8.2%</td><td class="py-3 text-green-600 font-bold">↑ 2</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">performance marketing agency</td><td class="py-3"><span class="chip-green text-xs px-2 py-0.5 rounded-full font-bold">#2</span></td><td class="py-3 font-semibold">22,100</td><td class="py-3 text-primary font-bold">6.4%</td><td class="py-3 text-green-600 font-bold">↑ 5</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">google ads agency ho chi minh</td><td class="py-3"><span class="chip-blue text-xs px-2 py-0.5 rounded-full font-bold">#3</span></td><td class="py-3 font-semibold">18,750</td><td class="py-3 text-primary font-bold">5.9%</td><td class="py-3 text-green-600 font-bold">↑ 1</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">dịch vụ seo tổng thể</td><td class="py-3"><span class="chip-blue text-xs px-2 py-0.5 rounded-full font-bold">#4</span></td><td class="py-3 font-semibold">15,200</td><td class="py-3 text-primary font-bold">7.1%</td><td class="py-3 text-outline font-bold">— 0</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">tiktok ads agency vietnam</td><td class="py-3"><span class="chip-yellow text-xs px-2 py-0.5 rounded-full font-bold">#7</span></td><td class="py-3 font-semibold">12,800</td><td class="py-3 text-primary font-bold">4.3%</td><td class="py-3 text-red-500 font-bold">↓ 2</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: PAID MEDIA ══════════════ -->
+    <div id="page-paid" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div class="flex justify-between items-end">
+        <div><h1 class="font-lexend text-2xl font-bold">Paid Media</h1><p class="text-outline text-sm mt-1">Google Ads · Meta Ads · TikTok Ads — tổng hợp hiệu suất</p></div>
+      </div>
+
+      <!-- Paid KPIs -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card-gradient rounded-2xl p-5 text-white">
+          <p class="text-white/70 text-[11px] uppercase tracking-wider font-bold mb-2">Total Spend</p>
+          <h3 class="font-lexend text-2xl font-bold">₫1.27B</h3>
+          <p class="text-white/80 text-xs mt-1">Budget utilization: 85%</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Blended ROAS</p>
+          <h3 class="font-lexend text-2xl font-bold">4.8x</h3>
+          <p class="text-xs text-orange-500 font-bold mt-1">Target 5.0x · -4%</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Total Conversions</p>
+          <h3 class="font-lexend text-2xl font-bold">3,248</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↑ 22% vs tháng trước</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg. CPA</p>
+          <h3 class="font-lexend text-2xl font-bold">₫391k</h3>
+          <p class="text-xs text-green-600 font-bold mt-1">↓ -8% vs target</p>
+        </div>
+      </div>
+
+      <!-- Channel breakdown -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+        <!-- Google Ads -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><span class="text-blue-600 font-bold text-sm">G</span></div>
+            <div><h4 class="font-lexend font-bold">Google Ads</h4><p class="text-xs text-outline">Search + PMax + Display</p></div>
+          </div>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-outline">Spend</span><span class="font-bold">₫680M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Impressions</span><span class="font-bold">8.4M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Clicks</span><span class="font-bold">126,000</span></div>
+            <div class="flex justify-between"><span class="text-outline">CTR</span><span class="font-bold text-primary">1.5%</span></div>
+            <div class="flex justify-between"><span class="text-outline">CPC</span><span class="font-bold">₫5,396</span></div>
+            <div class="flex justify-between"><span class="text-outline">Conversions</span><span class="font-bold text-green-600">1,840</span></div>
+            <div class="flex justify-between border-t border-outline-variant/20 pt-3"><span class="text-outline font-bold">ROAS</span><span class="font-bold text-xl text-primary">5.2x</span></div>
+          </div>
+        </div>
+        <!-- Meta Ads -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center"><span class="text-white font-bold text-sm">f</span></div>
+            <div><h4 class="font-lexend font-bold">Meta Ads</h4><p class="text-xs text-outline">Facebook + Instagram</p></div>
+          </div>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-outline">Spend</span><span class="font-bold">₫420M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Reach</span><span class="font-bold">2.1M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Impressions</span><span class="font-bold">6.8M</span></div>
+            <div class="flex justify-between"><span class="text-outline">CTR</span><span class="font-bold text-primary">1.2%</span></div>
+            <div class="flex justify-between"><span class="text-outline">CPM</span><span class="font-bold">₫61,764</span></div>
+            <div class="flex justify-between"><span class="text-outline">Leads (CPL)</span><span class="font-bold text-green-600">840 · ₫500k</span></div>
+            <div class="flex justify-between border-t border-outline-variant/20 pt-3"><span class="text-outline font-bold">ROAS</span><span class="font-bold text-xl text-primary">4.1x</span></div>
+          </div>
+        </div>
+        <!-- TikTok Ads -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-black flex items-center justify-center"><span class="text-white font-bold text-sm">T</span></div>
+            <div><h4 class="font-lexend font-bold">TikTok Ads</h4><p class="text-xs text-outline">In-Feed + TopView</p></div>
+          </div>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between"><span class="text-outline">Spend</span><span class="font-bold">₫170M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Views</span><span class="font-bold">5.2M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Clicks</span><span class="font-bold">78,400</span></div>
+            <div class="flex justify-between"><span class="text-outline">CTR</span><span class="font-bold text-primary">1.5%</span></div>
+            <div class="flex justify-between"><span class="text-outline">CPM</span><span class="font-bold">₫32,692</span></div>
+            <div class="flex justify-between"><span class="text-outline">Conversions</span><span class="font-bold text-green-600">568</span></div>
+            <div class="flex justify-between border-t border-outline-variant/20 pt-3"><span class="text-outline font-bold">ROAS</span><span class="font-bold text-xl text-primary">3.9x</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROAS Comparison Chart -->
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-4">ROAS Trend theo kênh — 30 ngày</h4>
+        <div class="h-56"><canvas id="roasChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: SOCIAL ══════════════ -->
+
+
+    <!-- PAGE: PERFORMANCE / GOOGLE ADS REAL DATA -->
+    <div id="page-performance" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div>
+          <h1 class="font-lexend text-2xl font-bold">Performance</h1>
+          <p class="text-outline text-sm mt-1">Google Ads real data via server-side Google Ads API connection</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="google-ads-status" class="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-3 py-1.5 text-xs font-bold text-outline">
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+            Not loaded
+          </span>
+          <button onclick="loadGoogleAdsPerformance(true)" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-container active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-base">sync</span>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div id="google-ads-error" class="hidden card rounded-2xl p-5 border-l-4 border-l-tertiary">
+        <div class="flex gap-3">
+          <span class="material-symbols-outlined text-tertiary">warning</span>
+          <div>
+            <h4 class="font-lexend font-bold text-on-surface">Google Ads connection is not ready</h4>
+            <p id="google-ads-error-text" class="text-sm text-on-surface-variant mt-1"></p>
+            <p class="text-xs text-outline mt-2">Set GOOGLE_ADS_DEVELOPER_TOKEN, GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET, GOOGLE_ADS_REFRESH_TOKEN, and GOOGLE_ADS_CUSTOMER_ID on the server. Add GOOGLE_ADS_LOGIN_CUSTOMER_ID when querying through an MCC.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 xl:grid-cols-5 gap-card-gap">
+        <div class="card-gradient rounded-2xl p-5 text-white">
+          <p class="text-white/70 text-[11px] uppercase tracking-wider font-bold mb-2">Spend</p>
+          <h3 id="ads-spend" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="ads-cpc" class="text-white/80 text-xs mt-1">Avg CPC --</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Impressions</p>
+          <h3 id="ads-impressions" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="ads-ctr" class="text-xs text-primary font-bold mt-1">CTR --</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Clicks</p>
+          <h3 id="ads-clicks" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="ads-cvr" class="text-xs text-outline font-bold mt-1">CVR --</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Conversions</p>
+          <h3 id="ads-conversions" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="ads-cpa" class="text-xs text-green-600 font-bold mt-1">CPA --</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">ROAS</p>
+          <h3 id="ads-roas" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="ads-conv-value" class="text-xs text-green-600 font-bold mt-1">Value --</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-card-gap">
+        <div class="card rounded-2xl p-6 xl:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-lexend font-bold">Daily spend, clicks and conversions</h4>
+            <span id="ads-range-label" class="text-xs text-outline font-semibold">--</span>
+          </div>
+          <div class="h-72"><canvas id="googleAdsTrendChart"></canvas></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Account health</h4>
+          <div class="space-y-4 text-sm">
+            <div class="flex justify-between gap-4"><span class="text-outline">Customer</span><span id="ads-customer" class="font-bold text-right">--</span></div>
+            <div class="flex justify-between gap-4"><span class="text-outline">Currency</span><span id="ads-currency" class="font-bold">--</span></div>
+            <div class="flex justify-between gap-4"><span class="text-outline">Date range</span><span id="ads-date-range" class="font-bold text-right">--</span></div>
+            <div class="flex justify-between gap-4"><span class="text-outline">Last sync</span><span id="ads-last-sync" class="font-bold text-right">--</span></div>
+            <div class="pt-4 border-t border-outline-variant/20">
+              <p class="text-xs text-outline leading-relaxed">Data is queried from Google Ads API on the server. No OAuth refresh token or developer token is exposed in this HTML file.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rounded-2xl p-6 overflow-x-auto">
+        <div class="flex items-center justify-between mb-5">
+          <h4 class="font-lexend font-bold">Top campaigns by spend</h4>
+          <span class="text-xs text-outline font-semibold">Google Ads</span>
+        </div>
+        <table class="w-full text-sm min-w-[760px]">
+          <thead>
+            <tr class="border-b border-outline-variant/20">
+              <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Campaign</th>
+              <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Channel</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">Spend</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">Clicks</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">CTR</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">Conv.</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">CPA</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">ROAS</th>
+            </tr>
+          </thead>
+          <tbody id="google-ads-campaign-table" class="divide-y divide-outline-variant/10">
+            <tr><td colspan="8" class="py-6 text-center text-outline">Load Google Ads data to populate this table.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGE: FACEBOOK ADS REAL DATA -->
+    <div id="page-facebook-ads" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        <div>
+          <h1 class="font-lexend text-2xl font-bold">Facebook Ads</h1>
+          <p class="text-outline text-sm mt-1">Meta Marketing API real data via Facebook permission popup</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span id="facebook-ads-status" class="inline-flex items-center gap-2 rounded-full border border-outline-variant/40 bg-white px-3 py-1.5 text-xs font-bold text-outline">
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+            Not connected
+          </span>
+          <button onclick="openFacebookAdsPopup()" class="inline-flex items-center gap-2 rounded-lg bg-[#1877f2] px-4 py-2 text-sm font-bold text-white hover:bg-[#0f63d6] active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-base">login</span>
+            Connect Facebook
+          </button>
+          <button onclick="loadFacebookAdsPerformance(true)" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-container active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-base">sync</span>
+            Refresh
+          </button>
+          <button onclick="disconnectFacebookAds()" class="inline-flex items-center gap-2 rounded-lg border border-outline-variant/50 bg-white px-4 py-2 text-sm font-bold text-on-surface hover:bg-surface-container-low active:scale-95 transition-all">
+            <span class="material-symbols-outlined text-base">logout</span>
+            Disconnect
+          </button>
+        </div>
+      </div>
+
+      <div id="facebook-ads-error" class="hidden card rounded-2xl p-5 border-l-4 border-l-tertiary">
+        <div class="flex gap-3">
+          <span class="material-symbols-outlined text-tertiary">warning</span>
+          <div>
+            <h4 class="font-lexend font-bold text-on-surface">Facebook Ads connection is not ready</h4>
+            <p id="facebook-ads-error-text" class="text-sm text-on-surface-variant mt-1"></p>
+            <p class="text-xs text-outline mt-2">Set FACEBOOK_APP_ID and FACEBOOK_APP_SECRET on the server. In Meta App settings, add this callback URL as a Valid OAuth Redirect URI: <span id="facebook-ads-redirect-uri" class="font-semibold break-all">--</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 xl:grid-cols-5 gap-card-gap">
+        <div class="rounded-2xl p-5 text-white" style="background:linear-gradient(135deg,#1877f2,#0a48a8);box-shadow:0 4px 24px rgba(24,119,242,0.24);">
+          <p class="text-white/70 text-[11px] uppercase tracking-wider font-bold mb-2">Spend</p>
+          <h3 id="fb-ads-spend" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="fb-ads-cpc" class="text-white/80 text-xs mt-1">CPC --</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Impressions</p>
+          <h3 id="fb-ads-impressions" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="fb-ads-cpm" class="text-xs text-primary font-bold mt-1">CPM --</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Link Clicks</p>
+          <h3 id="fb-ads-clicks" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="fb-ads-ctr" class="text-xs text-outline font-bold mt-1">CTR --</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Results</p>
+          <h3 id="fb-ads-results" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="fb-ads-cpr" class="text-xs text-green-600 font-bold mt-1">Cost/result --</p>
+        </div>
+        <div class="card rounded-2xl p-5">
+          <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">ROAS</p>
+          <h3 id="fb-ads-roas" class="font-lexend text-2xl font-bold">--</h3>
+          <p id="fb-ads-conv-value" class="text-xs text-green-600 font-bold mt-1">Value --</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-card-gap">
+        <div class="card rounded-2xl p-6 xl:col-span-2">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="font-lexend font-bold">Daily spend, clicks and results</h4>
+            <span id="fb-ads-range-label" class="text-xs text-outline font-semibold">--</span>
+          </div>
+          <div class="h-72"><canvas id="facebookAdsTrendChart"></canvas></div>
+        </div>
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Account health</h4>
+          <div class="space-y-4 text-sm">
+            <div class="flex justify-between gap-4"><span class="text-outline">Account</span><span id="fb-ads-account" class="font-bold text-right">--</span></div>
+            <div class="flex justify-between gap-4"><span class="text-outline">Currency</span><span id="fb-ads-currency" class="font-bold">--</span></div>
+            <div class="flex justify-between gap-4"><span class="text-outline">Date range</span><span id="fb-ads-date-range" class="font-bold text-right">--</span></div>
+            <div class="flex justify-between gap-4"><span class="text-outline">Last sync</span><span id="fb-ads-last-sync" class="font-bold text-right">--</span></div>
+            <div class="flex justify-between gap-4"><span class="text-outline">Token expiry</span><span id="fb-ads-token-expiry" class="font-bold text-right">--</span></div>
+            <div class="pt-4 border-t border-outline-variant/20">
+              <p class="text-xs text-outline leading-relaxed">The popup grants Facebook ads_read permission. Reporting calls run server-side through the Meta Marketing API.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card rounded-2xl p-6 overflow-x-auto">
+        <div class="flex items-center justify-between mb-5">
+          <h4 class="font-lexend font-bold">Top campaigns by spend</h4>
+          <span class="text-xs text-outline font-semibold">Facebook Ads</span>
+        </div>
+        <table class="w-full text-sm min-w-[820px]">
+          <thead>
+            <tr class="border-b border-outline-variant/20">
+              <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Campaign</th>
+              <th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Objective</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">Spend</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">Reach</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">Link Clicks</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">CTR</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">Results</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">Cost/result</th>
+              <th class="pb-3 text-right text-[11px] uppercase tracking-wider text-outline font-bold">ROAS</th>
+            </tr>
+          </thead>
+          <tbody id="facebook-ads-campaign-table" class="divide-y divide-outline-variant/10">
+            <tr><td colspan="9" class="py-6 text-center text-outline">Connect Facebook Ads to populate this table.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="page-social" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div><h1 class="font-lexend text-2xl font-bold">Social Media</h1><p class="text-outline text-sm mt-1">Facebook · Instagram · TikTok · LinkedIn — organic performance</p></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Total Followers</p><h3 class="font-lexend text-2xl font-bold">48,240</h3><p class="text-xs text-green-600 font-bold mt-1">↑ +1,240 tháng này</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg Engagement Rate</p><h3 class="font-lexend text-2xl font-bold">3.8%</h3><p class="text-xs text-green-600 font-bold mt-1">↑ Benchmark: 2.1%</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Total Reach</p><h3 class="font-lexend text-2xl font-bold">890K</h3><p class="text-xs text-green-600 font-bold mt-1">↑ 34% vs tháng trước</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Posts Published</p><h3 class="font-lexend text-2xl font-bold">42</h3><p class="text-xs text-outline mt-1">~10 posts/tuần</p></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+        <div class="card rounded-2xl p-6"><h4 class="font-lexend font-bold mb-4">Engagement Trend</h4><div class="h-56"><canvas id="socialEngChart"></canvas></div></div>
+        <div class="card rounded-2xl p-6">
+          <h4 class="font-lexend font-bold mb-4">Top Posts tháng này</h4>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-400 to-purple-500 flex-shrink-0"></div><div class="flex-1 min-w-0"><p class="font-semibold text-sm truncate">Case Study: ROAS 8x với PMax</p><p class="text-[10px] text-outline">Facebook · 2,840 engagements</p></div><span class="chip-green text-xs px-2 py-0.5 rounded-full font-bold">Viral</span></div>
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-cyan-500 flex-shrink-0"></div><div class="flex-1 min-w-0"><p class="font-semibold text-sm truncate">AI trong Marketing 2025 — Thread</p><p class="text-[10px] text-outline">LinkedIn · 1,920 reactions</p></div><span class="chip-blue text-xs px-2 py-0.5 rounded-full font-bold">Hot</span></div>
+            <div class="flex items-center gap-3 p-3 bg-surface-container-low rounded-xl"><div class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-orange-500 flex-shrink-0"></div><div class="flex-1 min-w-0"><p class="font-semibold text-sm truncate">TikTok Ads cho B2B — Video tips</p><p class="text-[10px] text-outline">TikTok · 48K views</p></div><span class="chip-yellow text-xs px-2 py-0.5 rounded-full font-bold">Rising</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: CONTENT ══════════════ -->
+    <div id="page-content" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div><h1 class="font-lexend text-2xl font-bold">Content Performance</h1><p class="text-outline text-sm mt-1">Blog · Landing Pages · Whitepapers — hiệu suất nội dung</p></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Published Articles</p><h3 class="font-lexend text-2xl font-bold">86</h3><p class="text-xs text-green-600 font-bold mt-1">8 articles mới tháng này</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Avg Time on Page</p><h3 class="font-lexend text-2xl font-bold">4m 32s</h3><p class="text-xs text-green-600 font-bold mt-1">↑ +42s vs tháng trước</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Leads from Content</p><h3 class="font-lexend text-2xl font-bold">624</h3><p class="text-xs text-green-600 font-bold mt-1">49.9% tổng leads</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Content ROAS</p><h3 class="font-lexend text-2xl font-bold">12.4x</h3><p class="text-xs text-green-600 font-bold mt-1">↑ Highest channel</p></div>
+      </div>
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-5">Tất cả content — hiệu suất</h4>
+        <table class="w-full text-sm">
+          <thead><tr class="border-b border-outline-variant/20"><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Bài viết</th><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Loại</th><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Sessions</th><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">Leads</th><th class="pb-3 text-left text-[11px] uppercase tracking-wider text-outline font-bold">AI Citation</th></tr></thead>
+          <tbody class="divide-y divide-outline-variant/10">
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">Hướng dẫn AI Marketing 2025</td><td class="py-3"><span class="chip-blue text-[10px] px-2 py-0.5 rounded-full font-bold">Blog</span></td><td class="py-3 font-semibold">124,500</td><td class="py-3 font-bold text-green-600">2,410</td><td class="py-3"><span class="chip-green text-[10px] px-2 py-0.5 rounded-full font-bold">✓ GPT + SGE</span></td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">Performance Marketing Landing Page</td><td class="py-3"><span class="chip-yellow text-[10px] px-2 py-0.5 rounded-full font-bold">Landing</span></td><td class="py-3 font-semibold">82,100</td><td class="py-3 font-bold text-green-600">5,200</td><td class="py-3 text-outline text-xs">—</td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">SEO Future 2025 Whitepaper</td><td class="py-3"><span class="chip-green text-[10px] px-2 py-0.5 rounded-full font-bold">Gated</span></td><td class="py-3 font-semibold">45,300</td><td class="py-3 font-bold text-green-600">1,850</td><td class="py-3"><span class="chip-green text-[10px] px-2 py-0.5 rounded-full font-bold">✓ GPT</span></td></tr>
+            <tr class="hover:bg-surface-container-low/40 transition-colors"><td class="py-3 font-medium">Case Study: Ecommerce ROAS 8x</td><td class="py-3"><span class="chip-blue text-[10px] px-2 py-0.5 rounded-full font-bold">Case Study</span></td><td class="py-3 font-semibold">38,600</td><td class="py-3 font-bold text-green-600">980</td><td class="py-3 text-outline text-xs">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: LEADS ══════════════ -->
+    <!-- ══════════════ PAGE: LEAD GENERATION ══════════════ -->
+    <div id="page-leads" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <!-- Header -->
+      <div class="flex justify-between items-end">
+        <div>
+          <h1 class="font-lexend text-2xl font-bold">Lead Generation</h1>
+          <p class="text-outline text-sm mt-1">Pipeline tracking từ Lark Base — Số lượng · Chất lượng · Tiến độ</p>
+        </div>
+        <div id="lark-leads-status" class="flex items-center gap-2 text-xs text-outline px-3 py-1.5 bg-surface-container-low rounded-full border border-outline-variant/30">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>Kết nối Lark...
+        </div>
+      </div>
+      <!-- Error -->
+      <div id="lark-leads-error" class="hidden bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700"></div>
+      <!-- Skeleton loading -->
+      <div id="lark-leads-loading" class="space-y-card-gap">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-card-gap">
+          <div class="card rounded-2xl p-5 h-24" style="background:rgba(203,219,245,0.4);animation:pulse-dot 1.5s ease-in-out infinite;"></div>
+          <div class="card rounded-2xl p-5 h-24" style="background:rgba(203,219,245,0.4);animation:pulse-dot 1.5s ease-in-out infinite 0.1s;"></div>
+          <div class="card rounded-2xl p-5 h-24" style="background:rgba(203,219,245,0.4);animation:pulse-dot 1.5s ease-in-out infinite 0.2s;"></div>
+          <div class="card rounded-2xl p-5 h-24" style="background:rgba(203,219,245,0.4);animation:pulse-dot 1.5s ease-in-out infinite 0.3s;"></div>
+          <div class="card rounded-2xl p-5 h-24" style="background:rgba(203,219,245,0.4);animation:pulse-dot 1.5s ease-in-out infinite 0.4s;"></div>
+        </div>
+        <div class="card rounded-2xl p-6 h-64" style="background:rgba(203,219,245,0.4);animation:pulse-dot 1.5s ease-in-out infinite;"></div>
+      </div>
+      <!-- Content -->
+      <div id="lark-leads-content" style="display:none;" class="space-y-card-gap">
+
+        <!-- ── TIER 1: KPI Overview (Strategic) ── -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-card-gap">
+          <div class="card-gradient rounded-2xl p-5 text-white lg:col-span-1">
+            <p class="text-white/70 text-[11px] uppercase tracking-wider font-bold mb-2">Total Leads</p>
+            <h3 id="leads-total" class="font-lexend text-2xl font-bold">—</h3>
+            <p id="leads-total-sub" class="text-white/75 text-xs mt-1">Toàn bộ pipeline</p>
+          </div>
+          <div class="card rounded-2xl p-5">
+            <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Active Pipeline</p>
+            <h3 id="leads-active" class="font-lexend text-2xl font-bold">—</h3>
+            <p class="text-xs text-outline mt-1">Đang xử lý</p>
+          </div>
+          <div class="card rounded-2xl p-5">
+            <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">MQL</p>
+            <h3 id="leads-mql" class="font-lexend text-2xl font-bold">—</h3>
+            <p class="text-xs text-outline mt-1">Marketing Qualified</p>
+          </div>
+          <div class="card rounded-2xl p-5">
+            <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">SQL</p>
+            <h3 id="leads-sql" class="font-lexend text-2xl font-bold">—</h3>
+            <p class="text-xs text-outline mt-1">Sales Qualified</p>
+          </div>
+          <div class="card rounded-2xl p-5">
+            <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Win Rate</p>
+            <h3 id="leads-winrate" class="font-lexend text-2xl font-bold text-green-600">—</h3>
+            <p class="text-xs text-outline mt-1">Tỷ lệ chốt deal</p>
+          </div>
+        </div>
+
+        <!-- ── TIER 2: Operational (Volume + Pipeline Stage) ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+          <!-- Lead Volume by Month -->
+          <div class="card rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h4 class="font-lexend font-bold">Lead Volume theo Tháng</h4>
+                <p class="text-xs text-outline mt-0.5">Total · MQL · Won — 6 tháng gần nhất</p>
+              </div>
+              <span class="text-[10px] bg-surface-container-low text-outline font-bold px-2 py-1 rounded-full border border-outline-variant/20">Số lượng</span>
+            </div>
+            <div class="h-52"><canvas id="leadsVolumeChart"></canvas></div>
+          </div>
+          <!-- Pipeline Stage Snapshot -->
+          <div class="card rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h4 class="font-lexend font-bold">Pipeline Stage Distribution</h4>
+                <p class="text-xs text-outline mt-0.5">Số lead tại từng giai đoạn hiện tại</p>
+              </div>
+              <span class="text-[10px] bg-surface-container-low text-outline font-bold px-2 py-1 rounded-full border border-outline-variant/20">Tiến độ</span>
+            </div>
+            <div class="h-52"><canvas id="leadsPipelineChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ── TIER 3: Quality (Source Attribution + Win Rate) ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+          <!-- Source Attribution -->
+          <div class="card rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h4 class="font-lexend font-bold">Lead Source Attribution</h4>
+                <p class="text-xs text-outline mt-0.5">Số leads · Win Rate theo kênh</p>
+              </div>
+              <span class="text-[10px] bg-surface-container-low text-outline font-bold px-2 py-1 rounded-full border border-outline-variant/20">Chất lượng</span>
+            </div>
+            <div class="flex gap-5 items-start">
+              <div style="width:140px;height:140px;flex-shrink:0;">
+                <canvas id="leadsSourceDonut"></canvas>
+              </div>
+              <div id="leads-source-table" class="flex-1 space-y-2 overflow-y-auto" style="max-height:140px;"></div>
+            </div>
+          </div>
+          <!-- Win Rate by Source (horizontal bar) -->
+          <div class="card rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h4 class="font-lexend font-bold">Win Rate theo Nguồn</h4>
+                <p class="text-xs text-outline mt-0.5">Kênh nào chuyển đổi tốt nhất</p>
+              </div>
+              <span class="text-[10px] bg-surface-container-low text-outline font-bold px-2 py-1 rounded-full border border-outline-variant/20">Chất lượng</span>
+            </div>
+            <div class="h-40"><canvas id="leadsWinRateChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ── TIER 4: Detail (Recent Leads Table) ── -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h4 class="font-lexend font-bold">Lead mới nhất từ Lark</h4>
+              <p class="text-xs text-outline mt-0.5">Dữ liệu real-time từ Lark Base</p>
+            </div>
+            <span id="leads-table-label" class="text-xs bg-surface-container-low text-outline font-bold px-2 py-1 rounded-full border border-outline-variant/20"></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-[11px] uppercase tracking-wider text-outline border-b border-outline-variant/20">
+                  <th class="pb-3 text-left font-bold">Tên / Công ty</th>
+                  <th class="pb-3 text-left font-bold">Trạng thái</th>
+                  <th class="pb-3 text-left font-bold">Nguồn</th>
+                  <th class="pb-3 text-left font-bold">Người phụ trách</th>
+                  <th class="pb-3 text-left font-bold">Ngày</th>
+                  <th class="pb-3 text-right font-bold">Giá trị</th>
+                </tr>
+              </thead>
+              <tbody id="leads-table-body" class="divide-y divide-outline-variant/10"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: CONVERSION FUNNEL ══════════════ -->
+    <div id="page-funnel" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <!-- Header -->
+      <div class="flex justify-between items-end">
+        <div>
+          <h1 class="font-lexend text-2xl font-bold">Conversion Funnel</h1>
+          <p class="text-outline text-sm mt-1">Full-funnel analysis từ Lark Base — Top-down từ New Lead → Revenue</p>
+        </div>
+        <div id="lark-funnel-status" class="flex items-center gap-2 text-xs text-outline px-3 py-1.5 bg-surface-container-low rounded-full border border-outline-variant/30">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>—
+        </div>
+      </div>
+      <!-- Skeleton -->
+      <div id="lark-funnel-loading" class="space-y-card-gap">
+        <div class="card rounded-2xl p-6 h-72" style="background:rgba(203,219,245,0.4);animation:pulse-dot 1.5s ease-in-out infinite;"></div>
+      </div>
+      <!-- Content -->
+      <div id="lark-funnel-content" style="display:none;" class="space-y-card-gap">
+
+        <!-- ── TIER 1: Conversion Rate KPIs ── -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-card-gap">
+          <div class="card rounded-2xl p-5 text-center">
+            <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-1">New → MQL</p>
+            <h3 id="conv-new-mql" class="font-lexend text-3xl font-bold text-primary">—</h3>
+            <p class="text-xs text-outline mt-1">Qualification rate</p>
+          </div>
+          <div class="card rounded-2xl p-5 text-center">
+            <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-1">MQL → SQL</p>
+            <h3 id="conv-mql-sql" class="font-lexend text-3xl font-bold text-indigo-600">—</h3>
+            <p class="text-xs text-outline mt-1">Sales acceptance</p>
+          </div>
+          <div class="card rounded-2xl p-5 text-center">
+            <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-1">SQL → Proposal</p>
+            <h3 id="conv-sql-proposal" class="font-lexend text-3xl font-bold text-orange-500">—</h3>
+            <p class="text-xs text-outline mt-1">Demo / Báo giá</p>
+          </div>
+          <div class="card rounded-2xl p-5 text-center">
+            <p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-1">Proposal → Won</p>
+            <h3 id="conv-proposal-won" class="font-lexend text-3xl font-bold text-yellow-600">—</h3>
+            <p class="text-xs text-outline mt-1">Close rate</p>
+          </div>
+          <div class="card-gradient rounded-2xl p-5 text-center text-white">
+            <p class="text-[11px] uppercase tracking-wider text-white/70 font-bold mb-1">Overall Win Rate</p>
+            <h3 id="conv-overall" class="font-lexend text-3xl font-bold">—</h3>
+            <p class="text-xs text-white/70 mt-1">Lead → Customer</p>
+          </div>
+        </div>
+
+        <!-- ── TIER 2: Top-down Funnel Visualization ── -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-start mb-5">
+            <div>
+              <h4 class="font-lexend font-bold">Pipeline Funnel — Top to Bottom</h4>
+              <p class="text-xs text-outline mt-0.5">Số lượng lead tại mỗi bước · % drop-off từ bước trước</p>
+            </div>
+            <span class="text-[10px] bg-surface-container-low text-outline font-bold px-2 py-1 rounded-full border border-outline-variant/20">Real-time · Lark</span>
+          </div>
+          <div id="funnel-visual" class="space-y-2.5 max-w-3xl"></div>
+        </div>
+
+        <!-- ── TIER 3: Channel Analysis + Monthly Trend ── -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-card-gap">
+          <!-- Leads Won vs Total by Channel -->
+          <div class="card rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h4 class="font-lexend font-bold">Total vs Won theo Kênh</h4>
+                <p class="text-xs text-outline mt-0.5">So sánh lead vào và lead chốt</p>
+              </div>
+            </div>
+            <div class="h-52"><canvas id="funnelChannelChart"></canvas></div>
+          </div>
+          <!-- MQL/SQL/Won Monthly Trend -->
+          <div class="card rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h4 class="font-lexend font-bold">Trend MQL · SQL · Won theo Tháng</h4>
+                <p class="text-xs text-outline mt-0.5">Tiến độ chuyển đổi theo thời gian</p>
+              </div>
+            </div>
+            <div class="h-52"><canvas id="funnelTrendChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ── TIER 4: Stage-by-Stage Conversion Table ── -->
+        <div class="card rounded-2xl p-6">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h4 class="font-lexend font-bold">Stage-by-Stage Conversion Analysis</h4>
+              <p class="text-xs text-outline mt-0.5">Bottleneck nằm ở giai đoạn nào?</p>
+            </div>
+          </div>
+          <div id="funnel-stage-table" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: AI COPILOT ══════════════ -->
+    <div id="page-ai" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div class="flex justify-between items-end">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:linear-gradient(135deg,#ffce00,#ff9500);">
+              <span class="material-symbols-outlined fill-icon text-black text-xl">auto_awesome</span>
+            </div>
+            <h1 class="font-lexend text-2xl font-bold">AI Copilot</h1>
+          </div>
+          <p class="text-outline text-sm">Phân tích thông minh & gợi ý tối ưu campaign</p>
+        </div>
+        <span class="text-xs bg-ai-yellow text-black font-bold px-3 py-1.5 rounded-full">3 gợi ý mới</span>
+      </div>
+
+      <!-- AI Suggestions -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-card-gap">
+        <div class="card rounded-2xl p-6 border-l-4 border-ai-yellow">
+          <div class="flex items-center gap-2 mb-3"><span class="ai-badge text-[10px] font-black text-black px-2 py-0.5 rounded-full uppercase">Budget</span><span class="chip-green text-[10px] px-2 py-0.5 rounded-full font-bold">Ưu tiên cao</span></div>
+          <h4 class="font-lexend font-bold text-on-surface mb-2">Tái phân bổ ngân sách Paid</h4>
+          <p class="text-sm text-on-surface-variant leading-relaxed mb-4">Chuyển ₫50M từ Meta Ads sang Google PMax. Dữ liệu 30 ngày cho thấy Google PMax đang có ROAS 5.2x vs Meta 4.1x. Tối ưu có thể tăng blended ROAS từ 4.8x → 5.3x.</p>
+          <div class="bg-surface-container-low rounded-xl p-3 text-xs space-y-1 mb-4">
+            <div class="flex justify-between"><span class="text-outline">Dự kiến ROAS tăng</span><span class="font-bold text-green-600">+10.4%</span></div>
+            <div class="flex justify-between"><span class="text-outline">Revenue tăng thêm/tháng</span><span class="font-bold text-green-600">~₫260M</span></div>
+            <div class="flex justify-between"><span class="text-outline">Confidence level</span><span class="font-bold">87%</span></div>
+          </div>
+          <button class="w-full py-2.5 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary-container transition-colors">Áp dụng gợi ý →</button>
+        </div>
+
+        <div class="card rounded-2xl p-6 border-l-4 border-secondary-container">
+          <div class="flex items-center gap-2 mb-3"><span class="bg-secondary-container/20 text-secondary text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Content</span><span class="chip-blue text-[10px] px-2 py-0.5 rounded-full font-bold">Ưu tiên tb</span></div>
+          <h4 class="font-lexend font-bold text-on-surface mb-2">Update H1 cho AI Snippet</h4>
+          <p class="text-sm text-on-surface-variant leading-relaxed mb-4">Trang "/huong-dan/ai-marketing-2025" đang có CTR thấp hơn dự kiến từ Google AI Overviews. Đổi H1 từ "Hướng dẫn" thành "Cách [action]" format để tăng khả năng được featured.</p>
+          <div class="bg-surface-container-low rounded-xl p-3 text-xs space-y-1 mb-4">
+            <div class="flex justify-between"><span class="text-outline">CTR dự kiến tăng</span><span class="font-bold text-green-600">+1.8%</span></div>
+            <div class="flex justify-between"><span class="text-outline">Traffic tăng thêm/tháng</span><span class="font-bold text-green-600">~8,400</span></div>
+            <div class="flex justify-between"><span class="text-outline">Confidence level</span><span class="font-bold">74%</span></div>
+          </div>
+          <button class="w-full py-2.5 bg-surface-container-high text-on-surface rounded-xl text-xs font-bold hover:bg-surface-container-highest transition-colors">Xem chi tiết →</button>
+        </div>
+
+        <div class="card rounded-2xl p-6 border-l-4 border-orange-400">
+          <div class="flex items-center gap-2 mb-3"><span class="bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">SEO</span><span class="chip-yellow text-[10px] px-2 py-0.5 rounded-full font-bold">Opportunity</span></div>
+          <h4 class="font-lexend font-bold text-on-surface mb-2">15 Long-tail Keywords Gap</h4>
+          <p class="text-sm text-on-surface-variant leading-relaxed mb-4">AI phát hiện 15 từ khóa đuôi dài có search volume 500-2000/tháng, competitor yếu (DR &lt;30), và match content hiện có của Seongon. Ước tính rank top 3 trong 4-6 tuần.</p>
+          <div class="bg-surface-container-low rounded-xl p-3 text-xs space-y-1 mb-4">
+            <div class="flex justify-between"><span class="text-outline">Tổng SV/tháng</span><span class="font-bold text-green-600">18,400</span></div>
+            <div class="flex justify-between"><span class="text-outline">Leads dự kiến</span><span class="font-bold text-green-600">~220/tháng</span></div>
+            <div class="flex justify-between"><span class="text-outline">Confidence level</span><span class="font-bold">82%</span></div>
+          </div>
+          <button class="w-full py-2.5 bg-surface-container-high text-on-surface rounded-xl text-xs font-bold hover:bg-surface-container-highest transition-colors">Xem danh sách →</button>
+        </div>
+      </div>
+
+      <!-- AI Chat -->
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-4">Hỏi AI về Campaign</h4>
+        <div id="ai-chat-messages" class="bg-surface-container-low rounded-xl p-4 mb-4 h-48 overflow-y-auto space-y-3">
+          <div class="flex gap-3">
+            <div class="w-7 h-7 rounded-full bg-ai-yellow flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-black fill-icon text-sm">auto_awesome</span></div>
+            <div class="bg-white rounded-xl p-3 text-sm max-w-lg shadow-sm"><p>Xin chào Thiên! Tôi đã phân tích dữ liệu 30 ngày. Có 3 gợi ý tối ưu đang chờ bạn. Hỏi tôi bất cứ điều gì về campaign performance.</p></div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <input id="ai-input" class="flex-1 bg-surface-container-low border border-outline-variant/50 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-secondary-container" placeholder="Ví dụ: Tại sao ROAS Meta thấp hơn Google?" onkeypress="if(event.key==='Enter') sendAI()">
+          <button onclick="sendAI()" class="px-5 py-2.5 rounded-full text-black font-bold text-sm hover:brightness-110 transition-all" style="background:linear-gradient(90deg,#ffce00,#ff9500);">Gửi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ PAGE: GEO ══════════════ -->
+    <div id="page-geo" class="page px-gutter py-6 space-y-card-gap fade-in">
+      <div><h1 class="font-lexend text-2xl font-bold">GEO Performance</h1><p class="text-outline text-sm mt-1">Generative Engine Optimization — AI Search Visibility</p></div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-card-gap">
+        <div class="card-gradient rounded-2xl p-5 text-white"><p class="text-white/70 text-[11px] uppercase tracking-wider font-bold mb-2">AI Visibility Score</p><h3 class="font-lexend text-3xl font-bold">88</h3><p class="text-white/80 text-xs mt-1">Top 15% in industry</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">ChatGPT Citations</p><h3 class="font-lexend text-2xl font-bold">42.4k</h3><p class="text-xs text-green-600 font-bold mt-1">↑ +18% vs tháng trước</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Google AI Mentions</p><h3 class="font-lexend text-2xl font-bold">15.2k</h3><p class="text-xs text-green-600 font-bold mt-1">82% query appearance</p></div>
+        <div class="card rounded-2xl p-5"><p class="text-[11px] uppercase tracking-wider text-outline font-bold mb-2">Brand Sentiment AI</p><h3 class="font-lexend text-2xl font-bold">92%</h3><p class="text-xs text-green-600 font-bold mt-1">Highly Positive</p></div>
+      </div>
+      <div class="card rounded-2xl p-6">
+        <h4 class="font-lexend font-bold mb-4">AI Visibility Trend — 90 ngày</h4>
+        <div class="h-56"><canvas id="geoChart"></canvas></div>
+      </div>
+    </div>
+
+  </div><!-- end pt-[68px] -->
+</main>
+
+<!-- FAB -->
+<button onclick="showPage('ai')" class="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-black hover:scale-110 active:scale-95 transition-all z-50" style="background:linear-gradient(135deg,#ffce00,#ff9500);">
+  <span class="material-symbols-outlined fill-icon text-2xl">auto_awesome</span>
+</button>
+
+<script>
+// V3: email and OTP login screens removed. The dashboard opens directly.
+
+// Navigation
+const pages = ['dashboard','seo','paid','performance','facebook-ads','social','content','leads','funnel','ai','geo'];
+const pageTitles = {
+  dashboard: 'Marketing Dashboard', seo: 'SEO Analytics', paid: 'Paid Media',
+  performance: 'Performance', 'facebook-ads': 'Facebook Ads', social: 'Social Media', content: 'Content Performance', leads: 'Lead Generation',
+  funnel: 'Conversion Funnel', ai: 'AI Copilot', geo: 'GEO Performance'
+};
+
+function showPage(name) {
+  pages.forEach(p => {
+    document.getElementById('page-' + p)?.classList.remove('active');
+    document.querySelector(`[data-page="${p}"]`)?.classList.remove('nav-active');
+    document.querySelector(`[data-page="${p}"]`)?.classList.add('text-slate-300');
+  });
+  const el = document.getElementById('page-' + name);
+  if (el) { el.classList.add('active'); el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in'); }
+  const btn = document.querySelector(`[data-page="${name}"]`);
+  if (btn) { btn.classList.add('nav-active'); btn.classList.remove('text-slate-300'); }
+  document.getElementById('page-title').textContent = pageTitles[name] || 'Dashboard';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Lazy init charts
+  setTimeout(() => initCharts(name), 50);
+}
+
+// ──── Chart.js helpers ────
+const chartInstances = {};
+function makeChart(id, type, labels, datasets, opts = {}) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); }
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  chartInstances[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: { duration: 600 },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a2e4a', titleFont: { family: 'Inter', size: 12 }, bodyFont: { family: 'Inter', size: 11 }, padding: 10, cornerRadius: 8 }, ...opts.plugins },
+      scales: opts.scales || (type === 'doughnut' || type === 'bar' && opts.horizontal ? {} : {
+        x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } },
+        y: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } }
+      }),
+      ...opts
+    }
+  });
+}
+
+const days30 = ['1/4','5/4','10/4','15/4','20/4','25/4','30/4','5/5','10/5'];
+
+function initCharts(page) {
+  if (page === 'dashboard' || page === undefined) {
+    makeChart('multiChannelChart', 'line', days30, [
+      { label: 'Organic', data: [14000,18000,16500,22000,19000,28000,24000,32000,30000], borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#0037b7' },
+      { label: 'Paid', data: [8000,9500,8800,11000,10200,13000,11500,15000,14000], borderColor: '#19d1ff', backgroundColor: 'rgba(25,209,255,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#19d1ff' },
+      { label: 'AI', data: [2000,3500,4000,5200,6000,7800,8500,10000,12000], borderColor: '#ffce00', backgroundColor: 'rgba(255,206,0,0.06)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#ffce00' },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } } });
+
+    makeChart('trafficDonut', 'doughnut', ['Organic', 'AI Search', 'Paid', 'Direct'],
+      [{ data: [45, 32, 12, 11], backgroundColor: ['#0037b7', '#19d1ff', '#b22b01', '#cbdbf5'], borderWidth: 0, hoverOffset: 6 }],
+      { scales: {}, cutout: '70%', plugins: { legend: { display: false } } });
+  }
+
+  if (page === 'seo') {
+    makeChart('seoTrendChart', 'line', days30, [
+      { label: 'Sessions', data: [38000,42000,40000,55000,52000,68000,64000,78000,74000], borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.08)', fill: true, tension: 0.4, pointRadius: 3 }
+    ]);
+    makeChart('keywordDistChart', 'bar', ['Top 1-3', 'Top 4-10', 'Top 11-20', 'Top 21-50', '50+'],
+      [{ data: [248, 1000, 1800, 3200, 8400], backgroundColor: ['#0037b7', '#19d1ff', '#b8c4ff', '#dde1ff', '#e5eeff'], borderRadius: 6 }],
+      { scales: { x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } }, y: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } } } });
+  }
+
+  if (page === 'paid') {
+    makeChart('roasChart', 'line', days30, [
+      { label: 'Google', data: [4.8,5.1,4.9,5.3,5.0,5.4,5.2,5.6,5.2], borderColor: '#0037b7', tension: 0.4, pointRadius: 3, fill: false },
+      { label: 'Meta', data: [3.8,4.0,3.9,4.2,4.0,4.3,4.1,4.5,4.1], borderColor: '#1877f2', tension: 0.4, pointRadius: 3, fill: false },
+      { label: 'TikTok', data: [3.4,3.6,3.5,3.8,3.7,4.0,3.8,4.2,3.9], borderColor: '#000', tension: 0.4, pointRadius: 3, fill: false },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } } });
+  }
+
+  if (page === 'performance') {
+    loadGoogleAdsPerformance();
+  }
+
+  if (page === 'facebook-ads') {
+    loadFacebookAdsStatus();
+    loadFacebookAdsPerformance();
+  }
+
+  if (page === 'social') {
+    makeChart('socialEngChart', 'bar', days30, [
+      { label: 'Facebook', data: [420,380,510,490,620,580,710,670,740], backgroundColor: '#1877f2', borderRadius: 4, borderSkipped: false },
+      { label: 'LinkedIn', data: [180,210,240,220,280,260,310,295,320], backgroundColor: '#0077b5', borderRadius: 4, borderSkipped: false },
+      { label: 'TikTok', data: [350,290,480,420,560,520,640,600,680], backgroundColor: '#000', borderRadius: 4, borderSkipped: false },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } }, y: { stacked: true, grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } } } });
+  }
+
+  if (page === 'leads') {
+    loadLarkLeads();
+  }
+
+  if (page === 'funnel') {
+    loadLarkLeads();
+  }
+
+  if (page === 'geo') {
+    const geo90 = Array.from({length:12}, (_,i) => `T${i+1}`);
+    makeChart('geoChart', 'line', geo90, [
+      { label: 'ChatGPT', data: [22000,25000,28000,30000,33000,35000,37000,38500,40000,41000,41800,42400], borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.06)', fill: true, tension: 0.4, pointRadius: 3 },
+      { label: 'Google AI', data: [5000,6500,7800,9200,10500,11800,12600,13400,14000,14600,14900,15200], borderColor: '#ffce00', backgroundColor: 'rgba(255,206,0,0.04)', fill: true, tension: 0.4, pointRadius: 3 },
+    ], { plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } } });
+  }
+}
+
+// ──── Date Range ────
+function updateDateRange() {
+  // Trigger chart refresh with subtle animation
+  const p = document.querySelector('.page.active')?.id?.replace('page-','');
+  if (p === 'performance') loadGoogleAdsPerformance(true);
+  else if (p === 'facebook-ads') loadFacebookAdsPerformance(true);
+  else if (p) initCharts(p);
+}
+
+// ──── AI Chat ────
+
+// Google Ads Performance
+let googleAdsLoading = false;
+let googleAdsLoadedRange = null;
+
+function setGoogleAdsStatus(label, tone = 'idle') {
+  const el = document.getElementById('google-ads-status');
+  if (!el) return;
+  const colors = {
+    idle: 'bg-slate-400', loading: 'bg-amber-400', ok: 'bg-green-500', error: 'bg-red-500'
+  };
+  el.innerHTML = `<span class="w-2 h-2 rounded-full ${colors[tone] || colors.idle}"></span>${label}`;
+}
+
+function showGoogleAdsError(message) {
+  const box = document.getElementById('google-ads-error');
+  const text = document.getElementById('google-ads-error-text');
+  if (box) box.classList.toggle('hidden', !message);
+  if (text) text.textContent = message || '';
+}
+
+function fmtNumber(value, digits = 0) {
+  const n = Number(value || 0);
+  return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: digits }).format(n);
+}
+
+function fmtPercent(value, digits = 2) {
+  return `${fmtNumber(Number(value || 0) * 100, digits)}%`;
+}
+
+function fmtCurrency(value, currency = 'VND') {
+  const n = Number(value || 0);
+  try {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
+  } catch (err) {
+    return `${fmtNumber(n)} ${currency || ''}`.trim();
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+async function loadGoogleAdsPerformance(force = false) {
+  const active = document.querySelector('.page.active')?.id === 'page-performance';
+  if (!active && !force) return;
+  const range = document.getElementById('date-range')?.value || '30';
+  if (googleAdsLoading) return;
+  if (!force && googleAdsLoadedRange === range) return;
+
+  googleAdsLoading = true;
+  setGoogleAdsStatus('Loading Google Ads', 'loading');
+  showGoogleAdsError('');
+
+  try {
+    const res = await fetch(`/api/google-ads-performance?range=${encodeURIComponent(range)}`, { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) {
+      const missing = Array.isArray(data.missingEnv) && data.missingEnv.length ? ` Missing env: ${data.missingEnv.join(', ')}.` : '';
+      throw new Error((data.error || 'Could not load Google Ads data.') + missing);
+    }
+    googleAdsLoadedRange = range;
+    renderGoogleAdsPerformance(data);
+    setGoogleAdsStatus('Connected', 'ok');
+  } catch (err) {
+    setGoogleAdsStatus('Connection issue', 'error');
+    showGoogleAdsError(err.message || 'Could not load Google Ads data.');
+    renderGoogleAdsPerformance(null);
+  } finally {
+    googleAdsLoading = false;
+  }
+}
+
+function renderGoogleAdsPerformance(data) {
+  const summary = data?.summary || {};
+  const currency = summary.currencyCode || data?.currencyCode || 'VND';
+  const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+
+  if (!data) {
+    ['ads-spend','ads-impressions','ads-clicks','ads-conversions','ads-roas'].forEach(id => setText(id, '--'));
+    setText('ads-cpc', 'Avg CPC --');
+    setText('ads-ctr', 'CTR --');
+    setText('ads-cvr', 'CVR --');
+    setText('ads-cpa', 'CPA --');
+    setText('ads-conv-value', 'Value --');
+    setText('ads-customer', '--');
+    setText('ads-currency', '--');
+    setText('ads-date-range', '--');
+    setText('ads-last-sync', '--');
+    setText('ads-range-label', '--');
+    const table = document.getElementById('google-ads-campaign-table');
+    if (table) table.innerHTML = '<tr><td colspan="8" class="py-6 text-center text-outline">No Google Ads data loaded.</td></tr>';
+    makeChart('googleAdsTrendChart', 'line', [], []);
+    return;
+  }
+
+  setText('ads-spend', fmtCurrency(summary.spend, currency));
+  setText('ads-cpc', `Avg CPC ${fmtCurrency(summary.averageCpc, currency)}`);
+  setText('ads-impressions', fmtNumber(summary.impressions));
+  setText('ads-ctr', `CTR ${fmtPercent(summary.ctr)}`);
+  setText('ads-clicks', fmtNumber(summary.clicks));
+  setText('ads-cvr', `CVR ${fmtPercent(summary.conversionRate)}`);
+  setText('ads-conversions', fmtNumber(summary.conversions, 2));
+  setText('ads-cpa', `CPA ${fmtCurrency(summary.costPerConversion, currency)}`);
+  setText('ads-roas', `${fmtNumber(summary.roas, 2)}x`);
+  setText('ads-conv-value', `Value ${fmtCurrency(summary.conversionValue, currency)}`);
+  setText('ads-customer', data.customerId || '--');
+  setText('ads-currency', currency);
+  setText('ads-date-range', `${data.dateRange?.start || '--'} to ${data.dateRange?.end || '--'}`);
+  setText('ads-last-sync', data.lastUpdated ? new Date(data.lastUpdated).toLocaleString('vi-VN') : '--');
+  setText('ads-range-label', `${data.dateRange?.days || '--'} days`);
+
+  const daily = Array.isArray(data.daily) ? data.daily : [];
+  makeChart('googleAdsTrendChart', 'line', daily.map(row => row.date), [
+    { label: 'Spend', data: daily.map(row => row.spend), borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.08)', fill: true, tension: 0.35, pointRadius: 2, yAxisID: 'y' },
+    { label: 'Clicks', data: daily.map(row => row.clicks), borderColor: '#19d1ff', tension: 0.35, pointRadius: 2, yAxisID: 'y1' },
+    { label: 'Conversions', data: daily.map(row => row.conversions), borderColor: '#ffce00', tension: 0.35, pointRadius: 2, yAxisID: 'y1' }
+  ], {
+    plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688', maxRotation: 0 } },
+      y: { type: 'linear', position: 'left', grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688', callback: v => fmtNumber(v) }, border: { display: false } },
+      y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } }
+    }
+  });
+
+  const table = document.getElementById('google-ads-campaign-table');
+  const campaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
+  if (table) {
+    table.innerHTML = campaigns.length ? campaigns.map(row => `
+      <tr class="hover:bg-surface-container-low/40 transition-colors">
+        <td class="py-3 pr-4 font-medium">${escapeHtml(row.name)}</td>
+        <td class="py-3 pr-4"><span class="chip-blue text-[10px] px-2 py-0.5 rounded-full font-bold">${escapeHtml(row.channelType || 'UNKNOWN')}</span></td>
+        <td class="py-3 text-right font-semibold">${fmtCurrency(row.spend, currency)}</td>
+        <td class="py-3 text-right font-semibold">${fmtNumber(row.clicks)}</td>
+        <td class="py-3 text-right font-semibold text-primary">${fmtPercent(row.ctr)}</td>
+        <td class="py-3 text-right font-semibold text-green-600">${fmtNumber(row.conversions, 2)}</td>
+        <td class="py-3 text-right font-semibold">${fmtCurrency(row.costPerConversion, currency)}</td>
+        <td class="py-3 text-right font-bold text-primary">${fmtNumber(row.roas, 2)}x</td>
+      </tr>`).join('') : '<tr><td colspan="8" class="py-6 text-center text-outline">No campaigns returned for this range.</td></tr>';
+  }
+}
+
+// Facebook Ads Performance
+let facebookAdsLoading = false;
+let facebookAdsLoadedRange = null;
+let facebookOAuthPopup = null;
+let facebookOAuthTimer = null;
+let facebookOAuthPending = false;
+
+function setFacebookAdsStatus(label, tone = 'idle') {
+  const el = document.getElementById('facebook-ads-status');
+  if (!el) return;
+  const colors = {
+    idle: 'bg-slate-400', loading: 'bg-amber-400', ok: 'bg-green-500', error: 'bg-red-500'
+  };
+  el.innerHTML = `<span class="w-2 h-2 rounded-full ${colors[tone] || colors.idle}"></span>${label}`;
+}
+
+function showFacebookAdsError(message) {
+  const box = document.getElementById('facebook-ads-error');
+  const text = document.getElementById('facebook-ads-error-text');
+  if (box) box.classList.toggle('hidden', !message);
+  if (text) text.textContent = message || '';
+}
+
+function setFacebookRedirectUri(value) {
+  const el = document.getElementById('facebook-ads-redirect-uri');
+  if (el) el.textContent = value || '--';
+}
+
+async function loadFacebookAdsStatus() {
+  try {
+    const res = await fetch('/api/facebook-ads/oauth/status', { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    setFacebookRedirectUri(data.redirectUri);
+    if (!data.configured) {
+      const missing = Array.isArray(data.missingEnv) && data.missingEnv.length ? ` Missing env: ${data.missingEnv.join(', ')}.` : '';
+      setFacebookAdsStatus('Not configured', 'error');
+      showFacebookAdsError(`Facebook Ads API is not configured.${missing}`);
+      return;
+    }
+    if (data.connected) {
+      setFacebookAdsStatus('Connected', 'ok');
+      showFacebookAdsError('');
+      const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+      setText('fb-ads-account', data.account?.name || data.account?.id || '--');
+      setText('fb-ads-currency', data.account?.currency || '--');
+      setText('fb-ads-token-expiry', data.tokenExpiresAt ? new Date(data.tokenExpiresAt).toLocaleString('vi-VN') : '--');
+    } else {
+      setFacebookAdsStatus('Connect required', 'idle');
+    }
+  } catch (err) {
+    setFacebookAdsStatus('Status issue', 'error');
+    showFacebookAdsError(err.message || 'Could not read Facebook Ads connection status.');
+  }
+}
+
+function openFacebookAdsPopup() {
+  if (facebookOAuthPopup && !facebookOAuthPopup.closed) {
+    facebookOAuthPopup.focus();
+    return;
+  }
+
+  showFacebookAdsError('');
+  setFacebookAdsStatus('Waiting for permission', 'loading');
+  facebookOAuthPending = true;
+
+  const width = 620;
+  const height = 760;
+  const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
+  const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
+  facebookOAuthPopup = window.open(
+    '/api/facebook-ads/oauth/start',
+    'seongonFacebookAdsOAuth',
+    `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no`
+  );
+
+  if (!facebookOAuthPopup) {
+    facebookOAuthPending = false;
+    setFacebookAdsStatus('Popup blocked', 'error');
+    showFacebookAdsError('The browser blocked the Facebook permission popup. Allow popups for this site and try again.');
+    return;
+  }
+
+  clearInterval(facebookOAuthTimer);
+  facebookOAuthTimer = setInterval(() => {
+    if (!facebookOAuthPopup || !facebookOAuthPopup.closed || !facebookOAuthPending) return;
+    clearInterval(facebookOAuthTimer);
+    facebookOAuthPending = false;
+    setFacebookAdsStatus('Connect required', 'idle');
+    showFacebookAdsError('Facebook permission popup was closed before the connection finished.');
+  }, 500);
+}
+
+window.addEventListener('message', event => {
+  if (event.origin !== window.location.origin) return;
+  const payload = event.data || {};
+  if (payload.type !== 'facebook-ads-oauth') return;
+  facebookOAuthPending = false;
+  clearInterval(facebookOAuthTimer);
+
+  if (payload.ok) {
+    facebookAdsLoadedRange = null;
+    setFacebookAdsStatus('Connected', 'ok');
+    showFacebookAdsError('');
+    loadFacebookAdsStatus();
+    loadFacebookAdsPerformance(true);
+  } else {
+    setFacebookAdsStatus('Connection issue', 'error');
+    showFacebookAdsError(payload.message || 'Facebook permission was not granted.');
+    renderFacebookAdsPerformance(null);
+  }
+});
+
+async function disconnectFacebookAds() {
+  try {
+    await fetch('/api/facebook-ads/oauth/disconnect', { method: 'POST', cache: 'no-store' });
+  } catch (err) {
+    showFacebookAdsError(err.message || 'Could not disconnect Facebook Ads.');
+  }
+  facebookAdsLoadedRange = null;
+  setFacebookAdsStatus('Connect required', 'idle');
+  renderFacebookAdsPerformance(null);
+  loadFacebookAdsStatus();
+}
+
+async function loadFacebookAdsPerformance(force = false) {
+  const active = document.querySelector('.page.active')?.id === 'page-facebook-ads';
+  if (!active && !force) return;
+  const range = document.getElementById('date-range')?.value || '30';
+  if (facebookAdsLoading) return;
+  if (!force && facebookAdsLoadedRange === range) return;
+
+  facebookAdsLoading = true;
+  setFacebookAdsStatus('Loading Facebook Ads', 'loading');
+  showFacebookAdsError('');
+
+  try {
+    const res = await fetch(`/api/facebook-ads-performance?range=${encodeURIComponent(range)}`, { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) {
+      const missing = Array.isArray(data.missingEnv) && data.missingEnv.length ? ` Missing env: ${data.missingEnv.join(', ')}.` : '';
+      const error = new Error((data.error || 'Could not load Facebook Ads data.') + missing);
+      error.connectRequired = data.connectRequired;
+      error.configured = data.configured;
+      throw error;
+    }
+    facebookAdsLoadedRange = range;
+    renderFacebookAdsPerformance(data);
+    setFacebookAdsStatus('Connected', 'ok');
+  } catch (err) {
+    setFacebookAdsStatus('Connection issue', 'error');
+    showFacebookAdsError(err.message || 'Could not load Facebook Ads data.');
+    renderFacebookAdsPerformance(null);
+    if (err.connectRequired || err.configured === false) loadFacebookAdsStatus();
+  } finally {
+    facebookAdsLoading = false;
+  }
+}
+
+function renderFacebookAdsPerformance(data) {
+  const summary = data?.summary || {};
+  const currency = summary.currencyCode || data?.currencyCode || 'VND';
+  const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+
+  if (!data) {
+    ['fb-ads-spend','fb-ads-impressions','fb-ads-clicks','fb-ads-results','fb-ads-roas'].forEach(id => setText(id, '--'));
+    setText('fb-ads-cpc', 'CPC --');
+    setText('fb-ads-cpm', 'CPM --');
+    setText('fb-ads-ctr', 'CTR --');
+    setText('fb-ads-cpr', 'Cost/result --');
+    setText('fb-ads-conv-value', 'Value --');
+    setText('fb-ads-account', '--');
+    setText('fb-ads-currency', '--');
+    setText('fb-ads-date-range', '--');
+    setText('fb-ads-last-sync', '--');
+    setText('fb-ads-token-expiry', '--');
+    setText('fb-ads-range-label', '--');
+    const table = document.getElementById('facebook-ads-campaign-table');
+    if (table) table.innerHTML = '<tr><td colspan="9" class="py-6 text-center text-outline">Connect Facebook Ads to populate this table.</td></tr>';
+    makeChart('facebookAdsTrendChart', 'line', [], []);
+    return;
+  }
+
+  setText('fb-ads-spend', fmtCurrency(summary.spend, currency));
+  setText('fb-ads-cpc', `CPC ${fmtCurrency(summary.averageCpc, currency)}`);
+  setText('fb-ads-impressions', fmtNumber(summary.impressions));
+  setText('fb-ads-cpm', `CPM ${fmtCurrency(summary.cpm, currency)}`);
+  setText('fb-ads-clicks', fmtNumber(summary.clicks));
+  setText('fb-ads-ctr', `CTR ${fmtPercent(summary.ctr)}`);
+  setText('fb-ads-results', fmtNumber(summary.results, 2));
+  setText('fb-ads-cpr', `Cost/result ${fmtCurrency(summary.costPerResult, currency)}`);
+  setText('fb-ads-roas', `${fmtNumber(summary.roas, 2)}x`);
+  setText('fb-ads-conv-value', `Value ${fmtCurrency(summary.conversionValue, currency)}`);
+  setText('fb-ads-account', data.account?.name || data.account?.id || '--');
+  setText('fb-ads-currency', currency);
+  setText('fb-ads-date-range', `${data.dateRange?.start || '--'} to ${data.dateRange?.end || '--'}`);
+  setText('fb-ads-last-sync', data.lastUpdated ? new Date(data.lastUpdated).toLocaleString('vi-VN') : '--');
+  setText('fb-ads-token-expiry', data.tokenExpiresAt ? new Date(data.tokenExpiresAt).toLocaleString('vi-VN') : '--');
+  setText('fb-ads-range-label', `${data.dateRange?.days || '--'} days`);
+
+  const daily = Array.isArray(data.daily) ? data.daily : [];
+  makeChart('facebookAdsTrendChart', 'line', daily.map(row => row.date), [
+    { label: 'Spend', data: daily.map(row => row.spend), borderColor: '#1877f2', backgroundColor: 'rgba(24,119,242,0.08)', fill: true, tension: 0.35, pointRadius: 2, yAxisID: 'y' },
+    { label: 'Link clicks', data: daily.map(row => row.clicks), borderColor: '#19d1ff', tension: 0.35, pointRadius: 2, yAxisID: 'y1' },
+    { label: 'Results', data: daily.map(row => row.results), borderColor: '#ffce00', tension: 0.35, pointRadius: 2, yAxisID: 'y1' }
+  ], {
+    plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 16 } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688', maxRotation: 0 } },
+      y: { type: 'linear', position: 'left', grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688', callback: v => fmtNumber(v) }, border: { display: false } },
+      y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } }
+    }
+  });
+
+  const table = document.getElementById('facebook-ads-campaign-table');
+  const campaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
+  if (table) {
+    table.innerHTML = campaigns.length ? campaigns.map(row => `
+      <tr class="hover:bg-surface-container-low/40 transition-colors">
+        <td class="py-3 pr-4 font-medium">${escapeHtml(row.name)}</td>
+        <td class="py-3 pr-4"><span class="chip-blue text-[10px] px-2 py-0.5 rounded-full font-bold">${escapeHtml(row.objective || 'UNKNOWN')}</span></td>
+        <td class="py-3 text-right font-semibold">${fmtCurrency(row.spend, currency)}</td>
+        <td class="py-3 text-right font-semibold">${fmtNumber(row.reach)}</td>
+        <td class="py-3 text-right font-semibold">${fmtNumber(row.clicks)}</td>
+        <td class="py-3 text-right font-semibold text-primary">${fmtPercent(row.ctr)}</td>
+        <td class="py-3 text-right font-semibold text-green-600">${fmtNumber(row.results, 2)}</td>
+        <td class="py-3 text-right font-semibold">${fmtCurrency(row.costPerResult, currency)}</td>
+        <td class="py-3 text-right font-bold text-primary">${fmtNumber(row.roas, 2)}x</td>
+      </tr>`).join('') : '<tr><td colspan="9" class="py-6 text-center text-outline">No campaigns returned for this range.</td></tr>';
+  }
+}
+
+// AI Chat
+const aiResponses = {
+  default: ["Tôi cần thêm dữ liệu để trả lời chính xác hơn. Bạn có thể hỏi cụ thể về Google Ads, Meta, TikTok, hoặc SEO performance?", "Câu hỏi hay! Dựa trên dữ liệu 30 ngày, tôi thấy xu hướng tích cực nhưng cần xem thêm attribution model để đưa ra kết luận chắc chắn."],
+  roas: ["ROAS Meta (4.1x) thấp hơn Google (5.2x) vì: 1) Audience targeting ít chính xác hơn cho B2B, 2) Funnel dài hơn — Meta thường awareness stage, Google closer to purchase intent. Gợi ý: Dùng Meta cho retargeting thay vì top-of-funnel cold traffic."],
+  seo: ["SEO đang perform tốt nhất trong các kênh với Content ROAS 12.4x. Trang /huong-dan/ai-marketing-2025 có tiềm năng tăng thêm 30% traffic nếu tối ưu cho AI Overviews. Ưu tiên E-E-A-T signals."],
+  budget: ["Dựa trên ROAS data: Nên tăng budget Google Ads (+₫50M), giữ TikTok (growing channel), cân nhắc giảm Meta cold traffic và chuyển sang retargeting-only. Target blended ROAS 5.3x+."],
+  tiktok: ["TikTok Ads đang grow với ROAS 3.9x — thấp nhất nhưng tăng nhanh nhất (+28% WoW). Platform phù hợp brand awareness B2C. Gợi ý: Test Spark Ads với organic content đang viral để giảm CPM ~20%."],
+};
+
+function sendAI() {
+  const input = document.getElementById('ai-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const container = document.getElementById('ai-chat-messages');
+
+  // User bubble
+  container.innerHTML += `<div class="flex gap-3 justify-end"><div class="bg-primary text-white rounded-xl p-3 text-sm max-w-sm">${msg}</div></div>`;
+  input.value = '';
+  container.scrollTop = container.scrollHeight;
+
+  // AI response
+  setTimeout(() => {
+    const lower = msg.toLowerCase();
+    let response = aiResponses.default[Math.floor(Math.random() * aiResponses.default.length)];
+    if (lower.includes('roas') || lower.includes('meta') || lower.includes('return')) response = aiResponses.roas[0];
+    else if (lower.includes('seo') || lower.includes('organic')) response = aiResponses.seo[0];
+    else if (lower.includes('budget') || lower.includes('ngân sách') || lower.includes('phân bổ')) response = aiResponses.budget[0];
+    else if (lower.includes('tiktok')) response = aiResponses.tiktok[0];
+    container.innerHTML += `<div class="flex gap-3"><div class="w-7 h-7 rounded-full bg-ai-yellow flex-shrink-0 flex items-center justify-center"><span class="material-symbols-outlined text-black fill-icon text-sm">auto_awesome</span></div><div class="bg-white rounded-xl p-3 text-sm max-w-lg shadow-sm leading-relaxed">${response}</div></div>`;
+    container.scrollTop = container.scrollHeight;
+  }, 800);
+}
+
+// ──── Lark Bitable — Lead Gen & Funnel ────
+let larkLeadsLoading = false;
+let larkLeadsData    = null;
+
+const SRC_COLORS = ['#0037b7','#19d1ff','#b22b01','#ffce00','#00677f','#1877f2','#6366f1','#10b981','#f59e0b','#8b5cf6'];
+
+function setLarkStatus(page, label, tone) {
+  const el = document.getElementById(`lark-${page}-status`);
+  if (!el) return;
+  const dotCls = { idle: 'bg-slate-400', loading: 'bg-amber-400', ok: 'bg-green-500', error: 'bg-red-500' };
+  el.innerHTML = `<span class="w-2 h-2 rounded-full ${dotCls[tone] || dotCls.idle}${tone === 'loading' ? ' pulse' : ''}"></span>${label}`;
+}
+
+function showLarkError(page, msg) {
+  const el = document.getElementById(`lark-${page}-error`);
+  if (!el) return;
+  if (msg) { el.textContent = msg; el.classList.remove('hidden'); }
+  else el.classList.add('hidden');
+}
+
+async function loadLarkLeads(force = false) {
+  const activeLeads  = document.querySelector('.page.active')?.id === 'page-leads';
+  const activeFunnel = document.querySelector('.page.active')?.id === 'page-funnel';
+  if (!activeLeads && !activeFunnel && !force) return;
+  if (larkLeadsLoading) return;
+  if (!force && larkLeadsData) {
+    if (activeLeads)  renderLarkLeads(larkLeadsData);
+    if (activeFunnel) renderLarkFunnel(larkLeadsData);
+    return;
+  }
+
+  larkLeadsLoading = true;
+  if (activeLeads)  setLarkStatus('leads',  'Đang tải từ Lark...', 'loading');
+  if (activeFunnel) setLarkStatus('funnel', 'Đang tải từ Lark...', 'loading');
+
+  try {
+    const res  = await fetch('/api/lark-bitable', { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) throw new Error(data.error || 'Lark API lỗi');
+    larkLeadsData = data;
+    if (activeLeads)  renderLarkLeads(data);
+    if (activeFunnel) renderLarkFunnel(data);
+  } catch (err) {
+    if (activeLeads)  { setLarkStatus('leads',  'Lỗi kết nối Lark', 'error'); showLarkError('leads',  err.message); }
+    if (activeFunnel) { setLarkStatus('funnel', 'Lỗi kết nối Lark', 'error'); showLarkError('funnel', err.message); }
+  } finally {
+    larkLeadsLoading = false;
+  }
+}
+
+function stageChip(status) {
+  const map = {
+    New:       'chip-blue',
+    Nurturing: 'chip-yellow',
+    MQL:       'bg-purple-100 text-purple-700',
+    SQL:       'bg-indigo-100 text-indigo-700',
+    Proposal:  'bg-orange-100 text-orange-700',
+    Won:       'chip-green',
+    Lost:      'chip-red',
+  };
+  return `<span class="${map[status] || 'bg-surface-container text-on-surface'} text-[10px] px-2 py-0.5 rounded-full font-bold">${status}</span>`;
+}
+
+function renderLarkLeads(data) {
+  document.getElementById('lark-leads-loading').style.display  = 'none';
+  document.getElementById('lark-leads-content').style.display  = 'block';
+  const ts = data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString('vi-VN') : '';
+  setLarkStatus('leads', `Lark · ${data.tableName || 'Base'} · ${ts}`, 'ok');
+  if (typeof showLarkError === 'function') showLarkError('leads', '');
+
+  const s = data.summary || {};
+  document.getElementById('leads-total').textContent     = (s.total  || 0).toLocaleString('vi-VN');
+  document.getElementById('leads-total-sub').textContent = `${data.tableCount || 1} bảng · ${(data.allTables || []).map(t => t.name).join(', ')}`;
+  document.getElementById('leads-active').textContent    = (s.active || 0).toLocaleString('vi-VN');
+  document.getElementById('leads-mql').textContent       = (s.mql    || 0).toLocaleString('vi-VN');
+  document.getElementById('leads-sql').textContent       = (s.sql    || 0).toLocaleString('vi-VN');
+  document.getElementById('leads-winrate').textContent   = `${s.winRate || 0}%`;
+
+  // Lead Volume by Month (grouped bar: Total / MQL / Won)
+  const trend = data.trend || [];
+  makeChart('leadsVolumeChart', 'bar', trend.map(t => t.label), [
+    { label: 'Total',  data: trend.map(t => t.total), backgroundColor: 'rgba(0,55,183,0.75)',  borderRadius: 4, borderSkipped: false },
+    { label: 'MQL',    data: trend.map(t => t.mql),   backgroundColor: 'rgba(147,51,234,0.75)', borderRadius: 4, borderSkipped: false },
+    { label: 'Won',    data: trend.map(t => t.won),   backgroundColor: 'rgba(16,185,129,0.85)', borderRadius: 4, borderSkipped: false },
+  ], {
+    plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 12 } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } },
+      y: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } }
+    }
+  });
+
+  // Pipeline Stage (horizontal bar)
+  const stages = data.pipelineStages || [];
+  const stageCols = { New: '#0037b7', Nurturing: '#f59e0b', MQL: '#9333ea', SQL: '#6366f1', Proposal: '#f97316', Won: '#10b981', Lost: '#ef4444', Unknown: '#94a3b8' };
+  makeChart('leadsPipelineChart', 'bar', stages.map(s => s.stage), [
+    { data: stages.map(s => s.count), backgroundColor: stages.map(s => stageCols[s.stage] || '#0037b7'), borderRadius: 5 }
+  ], {
+    indexAxis: 'y',
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a2e4a', callbacks: { label: ctx => ` ${ctx.raw.toLocaleString('vi-VN')} leads` } } },
+    scales: {
+      x: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } },
+      y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 12, weight: '600' }, color: '#0b1c30' } }
+    }
+  });
+
+  // Source donut
+  const sources = (data.sourceArray || []).slice(0, 8);
+  makeChart('leadsSourceDonut', 'doughnut', sources.map(s => s.source),
+    [{ data: sources.map(s => s.count), backgroundColor: SRC_COLORS.slice(0, sources.length), borderWidth: 0, hoverOffset: 8 }],
+    { scales: {}, cutout: '65%', plugins: { legend: { display: false } } });
+
+  // Source legend table
+  const srcEl = document.getElementById('leads-source-table');
+  if (srcEl) {
+    srcEl.innerHTML = sources.map((s, i) => `
+      <div class="flex items-center gap-2 text-xs">
+        <span class="w-2 h-2 rounded-full flex-shrink-0" style="background:${SRC_COLORS[i]}"></span>
+        <span class="flex-1 font-medium truncate">${escapeHtml(s.source)}</span>
+        <span class="font-bold text-on-surface">${s.count.toLocaleString('vi-VN')}</span>
+        <span class="font-bold w-12 text-right text-green-600">${s.winRate}%</span>
+      </div>`).join('');
+  }
+
+  // Win rate by source (horizontal bar)
+  makeChart('leadsWinRateChart', 'bar', sources.map(s => s.source), [
+    { data: sources.map(s => s.winRate), backgroundColor: sources.map((_, i) => SRC_COLORS[i]), borderRadius: 4 }
+  ], {
+    indexAxis: 'y',
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a2e4a', callbacks: { label: ctx => ` ${ctx.raw}% win rate` } } },
+    scales: {
+      x: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688', callback: v => v + '%' }, border: { display: false }, max: 100 },
+      y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#0b1c30' } }
+    }
+  });
+
+  // Recent leads table
+  const tbody  = document.getElementById('leads-table-body');
+  const lblEl  = document.getElementById('leads-table-label');
+  const recent = data.recentLeads || [];
+  if (lblEl) lblEl.textContent = `${recent.length} lead mới nhất`;
+  if (tbody) {
+    tbody.innerHTML = recent.length ? recent.map(lead => `
+      <tr class="hover:bg-surface-container-low/40 transition-colors">
+        <td class="py-2.5 pr-4 font-medium" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(lead.name)}</td>
+        <td class="py-2.5 pr-4">${stageChip(lead.status)}</td>
+        <td class="py-2.5 pr-4 text-xs text-outline">${escapeHtml(lead.source)}</td>
+        <td class="py-2.5 pr-4 text-xs text-outline">${escapeHtml(lead.owner || '—')}</td>
+        <td class="py-2.5 pr-4 text-xs text-outline">${lead.date || '—'}</td>
+        <td class="py-2.5 text-right text-xs font-semibold">${lead.value ? '₫' + fmtNumber(lead.value) : '—'}</td>
+      </tr>`).join('') :
+      '<tr><td colspan="6" class="py-8 text-center text-outline text-sm">Chưa có dữ liệu lead trong Lark Base</td></tr>';
+  }
+}
+
+function renderLarkFunnel(data) {
+  document.getElementById('lark-funnel-loading').style.display = 'none';
+  document.getElementById('lark-funnel-content').style.display = 'block';
+  const ts = data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString('vi-VN') : '';
+  setLarkStatus('funnel', `Lark · ${ts}`, 'ok');
+
+  const conv = data.convRates || {};
+  document.getElementById('conv-new-mql').textContent      = `${conv.newToMql      || 0}%`;
+  document.getElementById('conv-mql-sql').textContent      = `${conv.mqlToSql      || 0}%`;
+  document.getElementById('conv-sql-proposal').textContent = `${conv.sqlToProposal || 0}%`;
+  document.getElementById('conv-proposal-won').textContent = `${conv.proposalToWon || 0}%`;
+  document.getElementById('conv-overall').textContent      = `${conv.overall        || 0}%`;
+
+  // Top-down funnel visualization (HTML bars)
+  const fd = data.funnelData || {};
+  const funnelStages = [
+    { label: 'New Leads',  count: fd.new      || 0, color: '#0037b7' },
+    { label: 'Nurturing',  count: fd.nurturing|| 0, color: '#f59e0b' },
+    { label: 'MQL',        count: fd.mql      || 0, color: '#9333ea' },
+    { label: 'SQL',        count: fd.sql      || 0, color: '#6366f1' },
+    { label: 'Proposal',   count: fd.proposal || 0, color: '#f97316' },
+    { label: 'Won',        count: fd.won      || 0, color: '#10b981' },
+  ].filter(s => s.count > 0);
+
+  const maxCount = Math.max(...funnelStages.map(s => s.count), 1);
+  const funnelEl = document.getElementById('funnel-visual');
+  if (funnelEl) {
+    funnelEl.innerHTML = funnelStages.map((stage, i) => {
+      const barPct  = Math.max((stage.count / maxCount * 100), 2).toFixed(1);
+      const dropPct = i > 0 && funnelStages[i-1].count > 0
+        ? (stage.count / funnelStages[i-1].count * 100).toFixed(0) : null;
+      return `
+        <div class="flex items-center gap-3">
+          <div class="text-right text-xs font-bold text-on-surface" style="width:88px;">${stage.label}</div>
+          <div class="flex-1 relative" style="height:32px;">
+            <div class="absolute inset-y-0 left-0 rounded-r-lg flex items-center" style="width:${barPct}%;background:${stage.color}22;min-width:6px;"></div>
+            <div class="absolute inset-y-0 left-0 rounded-r-lg" style="width:${barPct}%;background:linear-gradient(90deg,${stage.color},${stage.color}aa);min-width:4px;"></div>
+          </div>
+          <div class="text-sm font-bold text-on-surface" style="width:48px;text-align:right;">${stage.count.toLocaleString('vi-VN')}</div>
+          <div class="text-xs font-bold" style="width:64px;text-align:right;color:${dropPct !== null && parseInt(dropPct) < 50 ? '#ef4444' : dropPct !== null ? '#10b981' : '#94a3b8'};">
+            ${dropPct !== null ? '↓ ' + dropPct + '%' : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Channel comparison chart (Total vs Won)
+  const sources = (data.sourceArray || []).slice(0, 7);
+  makeChart('funnelChannelChart', 'bar', sources.map(s => s.source), [
+    { label: 'Total Leads', data: sources.map(s => s.count), backgroundColor: 'rgba(0,55,183,0.65)',  borderRadius: 4, borderSkipped: false },
+    { label: 'Won',         data: sources.map(s => s.won),   backgroundColor: 'rgba(16,185,129,0.85)', borderRadius: 4, borderSkipped: false },
+  ], {
+    plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 12 } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 }, color: '#747688', maxRotation: 30 } },
+      y: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } }
+    }
+  });
+
+  // Monthly MQL/SQL/Won trend
+  const trend = data.trend || [];
+  makeChart('funnelTrendChart', 'line', trend.map(t => t.label), [
+    { label: 'Total', data: trend.map(t => t.total), borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.06)', fill: true, tension: 0.4, pointRadius: 3, borderDash: [] },
+    { label: 'MQL',   data: trend.map(t => t.mql),   borderColor: '#9333ea', tension: 0.4, pointRadius: 3, fill: false },
+    { label: 'Won',   data: trend.map(t => t.won),   borderColor: '#10b981', tension: 0.4, pointRadius: 3, fill: false },
+  ], {
+    plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 12 } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } },
+      y: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } }
+    }
+  });
+
+  // Stage conversion analysis table
+  const stageEl = document.getElementById('funnel-stage-table');
+  if (stageEl) {
+    const stages = [
+      { from: 'New',      to: 'MQL',      rate: conv.newToMql,       fromCount: fd.new,      toCount: fd.mql },
+      { from: 'MQL',      to: 'SQL',      rate: conv.mqlToSql,       fromCount: fd.mql,      toCount: fd.sql },
+      { from: 'SQL',      to: 'Proposal', rate: conv.sqlToProposal,  fromCount: fd.sql,      toCount: fd.proposal },
+      { from: 'Proposal', to: 'Won',      rate: conv.proposalToWon,  fromCount: fd.proposal, toCount: fd.won },
+    ];
+    stageEl.innerHTML = stages.map(row => {
+      const r = parseFloat(row.rate || 0);
+      const barColor = r >= 50 ? '#10b981' : r >= 25 ? '#f97316' : '#ef4444';
+      const badge = r >= 50 ? 'chip-green' : r >= 25 ? 'chip-yellow' : 'chip-red';
+      return `
+        <div class="flex items-center gap-4 py-2.5 border-b border-outline-variant/10 last:border-0">
+          <div class="font-bold text-sm text-on-surface" style="width:140px;">${row.from} → ${row.to}</div>
+          <div class="flex-1">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${r}%;background:${barColor};"></div>
+            </div>
+          </div>
+          <div class="font-bold text-sm" style="width:52px;text-align:right;color:${barColor};">${r}%</div>
+          <span class="${badge} text-[10px] px-2 py-0.5 rounded-full font-bold" style="width:72px;text-align:center;">${r >= 50 ? 'Tốt' : r >= 25 ? 'Trung bình' : 'Cần cải thiện'}</span>
+          <div class="text-xs text-outline" style="width:120px;text-align:right;">${(row.fromCount||0).toLocaleString('vi-VN')} → ${(row.toCount||0).toLocaleString('vi-VN')}</div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// ──── Init ────
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts('dashboard');
+});
+</script>
+</body>
+</html>
