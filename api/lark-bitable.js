@@ -268,6 +268,19 @@ module.exports = async function larkBitable(req, res) {
       return res.end(JSON.stringify({ tables: tables.map(t => ({ id: t.table_id, name: t.name })) }));
     }
 
+    // Debug: return raw fields + sample records for a specific table
+    if (req.query?.action === 'debug') {
+      const tableId = req.query?.tableId || tables[0]?.table_id;
+      if (!tableId) return res.end(JSON.stringify({ error: 'No table' }));
+      const fieldsRes = await larkGet(`/open-apis/bitable/v1/apps/${APP_TOKEN}/tables/${tableId}/fields`, token);
+      const recs = await getAllRecords(APP_TOKEN, tableId, token);
+      return res.end(JSON.stringify({
+        fields: (fieldsRes.data?.items || []).map(f => ({ name: f.field_name, type: f.type, ui_type: f.ui_type })),
+        total: recs.length,
+        sample: recs.slice(0, 3).map(r => ({ id: r.record_id, fields: r.fields }))
+      }));
+    }
+
     // Step 1: fetch fields for all tables sequentially to avoid rate limits
     function scoreByMeta(name, fields) {
       let s = 0;
