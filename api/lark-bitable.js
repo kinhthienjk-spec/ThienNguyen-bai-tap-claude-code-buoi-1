@@ -62,15 +62,33 @@ async function getAllRecords(appToken, tableId, token) {
 }
 
 // ── Field detection ──────────────────────────────────────────────
-const STATUS_KEYS   = ['trạng thái', 'status', 'stage', 'giai đoạn', 'tình trạng', 'phase', 'deal stage'];
-const SOURCE_KEYS   = ['nguồn', 'source', 'kênh', 'channel', 'nguồn lead', 'lead source', 'kênh lead'];
-const DATE_KEYS     = ['ngày tạo', 'created', 'create date', 'ngày', 'date', 'tạo lúc', 'creation date'];
-const VALUE_KEYS    = ['giá trị', 'value', 'deal value', 'doanh thu', 'revenue', 'budget', 'contract value'];
-const NAME_KEYS     = ['tên', 'name', 'họ tên', 'khách hàng', 'contact', 'lead name', 'company', 'tên công ty'];
-const OWNER_KEYS    = ['sale', 'phụ trách', 'owner', 'assigned', 'người phụ trách', 'sales rep', 'nhân viên'];
+// Priority: exact match > starts-with > contains; avoid matching ID/formula fields
+const STATUS_KEYS = ['active/fail', 'tình trạng sal', 'tình trạng mql', 'trạng thái', 'status', 'stage', 'giai đoạn', 'tình trạng', 'phase'];
+const SOURCE_KEYS = ['nguồn', 'kênh lead', 'nguồn lead', 'lead source', 'kênh khai thác', 'kênh'];
+const DATE_KEYS   = ['ngày tạo', 'created at', 'creation date', 'create date', 'ngày thành sal', 'ngày', 'date'];
+const VALUE_KEYS  = ['giá trị đã ký', 'giá trị đã báo giá', 'giá trị', 'deal value', 'doanh thu', 'revenue', 'budget'];
+const NAME_KEYS   = ['tên sal', 'tên khách hàng', 'tên công ty', 'tên', 'khách hàng', 'company', 'name'];
+const OWNER_KEYS  = ['chính acc', 'account nhận', 'phụ trách', 'owner', 'assigned', 'nhân viên', 'sale'];
+
+// EXCLUDED types: 11=Person, 15=URL, 18=Formula, 19=LinkRecord, 22=Lookup
+const SKIP_TYPES = new Set([11, 15, 18, 19, 22]);
 
 function findField(fields, keys) {
+  // Exact match first (highest priority), skipping formula/link/person types
   for (const f of fields) {
+    if (SKIP_TYPES.has(f.type)) continue;
+    const n = (f.field_name || '').toLowerCase();
+    if (keys.some(k => n === k.toLowerCase())) return f.field_name;
+  }
+  // Starts-with match
+  for (const f of fields) {
+    if (SKIP_TYPES.has(f.type)) continue;
+    const n = (f.field_name || '').toLowerCase();
+    if (keys.some(k => n.startsWith(k.toLowerCase()))) return f.field_name;
+  }
+  // Contains match (last resort)
+  for (const f of fields) {
+    if (SKIP_TYPES.has(f.type)) continue;
     const n = (f.field_name || '').toLowerCase();
     if (keys.some(k => n.includes(k.toLowerCase()))) return f.field_name;
   }
@@ -85,10 +103,12 @@ function extractStr(record, fieldName) {
   if (typeof val === 'number') return String(val);
   if (typeof val === 'boolean') return String(val);
   if (Array.isArray(val)) {
+    if (!val.length) return null;
     const first = val[0];
-    if (!first) return null;
     if (typeof first === 'string') return val.join(', ');
-    return first.text || first.name || first.value || null;
+    // Lark multi-select: [{value: "text"}] or [{text: "text"}] or [{name: "text"}]
+    const texts = val.map(v => v?.text || v?.value || v?.name).filter(Boolean);
+    return texts.length ? texts.join(', ') : null;
   }
   if (typeof val === 'object') return val.text || val.value || val.name || null;
   return null;
@@ -114,16 +134,29 @@ function extractNum(record, fieldName) {
 }
 
 // ── Status / Source normalization ────────────────────────────────
+// Handles both generic stages and Seongon-specific BDs pipeline:
+// MQL → SAL → SQL → Opp → Contract/Proposal → Close Cus (Won) / Fail (Lost)
 function normalizeStatus(raw) {
   if (!raw) return 'Unknown';
-  const s = raw.toLowerCase();
+  const s = raw.toLowerCase().trim();
+
+  // Seongon-specific: Won states
+  if (/close cus|ký hợp đồng|closed won|đã chốt|deal closed|contract signed|chốt hợp đồng|customer/.test(s)) return 'Won';
+  // Seongon-specific: Lost states
+  if (/fail$|lost$|lose|hủy|không tiếp|cancel|reject|closed lost|không đạt/.test(s)) return 'Lost';
+  // Seongon pipeline: MQL
+  if (/^mql$|marketing qualified|tiềm năng|potential/.test(s)) return 'MQL';
+  // Seongon pipeline: SAL (Sales Accepted Lead) = SQL equivalent
+  if (/^sal$|sales accepted/.test(s)) return 'SQL';
+  // Seongon pipeline: SQL / Opportunity
+  if (/^sql$|sales qualified|^opp$|opportunity|cơ hội/.test(s)) return 'SQL';
+  // Seongon pipeline: Proposal / Contract stage
+  if (/proposal|demo|đề xuất|báo giá|quote|gửi proposal|contract|hợp đồng/.test(s)) return 'Proposal';
+  // Generic: New leads
   if (/mới|new|inbound|unqualified|lead mới|tiếp nhận/.test(s)) return 'New';
-  if (/tư vấn|nurtur|contact|đang trao đổi|đang xử lý|in progress|đang tiếp cận/.test(s)) return 'Nurturing';
-  if (/mql|marketing qualified|tiềm năng|potential/.test(s)) return 'MQL';
-  if (/sql|sales qualified|opportunity|cơ hội/.test(s)) return 'SQL';
-  if (/proposal|demo|đề xuất|báo giá|quote|send proposal|gửi proposal/.test(s)) return 'Proposal';
-  if (/thắng|won|win|ký hợp đồng|closed won|đã chốt|success|deal closed|chốt/.test(s)) return 'Won';
-  if (/thua|lost|lose|hủy|không tiếp|cancel|reject|closed lost/.test(s)) return 'Lost';
+  // Generic: Nurturing
+  if (/tư vấn|nurtur|contact|đang trao đổi|đang xử lý|in progress|đang tiếp cận|active/.test(s)) return 'Nurturing';
+  // Pass-through for unrecognized (will show as their raw value)
   return raw;
 }
 
