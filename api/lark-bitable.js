@@ -74,23 +74,21 @@ const OWNER_KEYS  = ['chính acc', 'account nhận', 'phụ trách', 'owner', 'a
 const SKIP_TYPES = new Set([11, 15, 18, 19, 22]);
 
 function findField(fields, keys) {
-  // Exact match first (highest priority), skipping formula/link/person types
-  for (const f of fields) {
-    if (SKIP_TYPES.has(f.type)) continue;
-    const n = (f.field_name || '').toLowerCase();
-    if (keys.some(k => n === k.toLowerCase())) return f.field_name;
+  const eligible = fields.filter(f => !SKIP_TYPES.has(f.type));
+  // Pass 1: exact key match, in key priority order
+  for (const k of keys) {
+    const kl = k.toLowerCase();
+    for (const f of eligible) {
+      if ((f.field_name || '').toLowerCase() === kl) return f.field_name;
+    }
   }
-  // Starts-with match
-  for (const f of fields) {
-    if (SKIP_TYPES.has(f.type)) continue;
-    const n = (f.field_name || '').toLowerCase();
-    if (keys.some(k => n.startsWith(k.toLowerCase()))) return f.field_name;
-  }
-  // Contains match (last resort)
-  for (const f of fields) {
-    if (SKIP_TYPES.has(f.type)) continue;
-    const n = (f.field_name || '').toLowerCase();
-    if (keys.some(k => n.includes(k.toLowerCase()))) return f.field_name;
+  // Pass 2: contains match, excluding ID/code fields (avoid SourceID, MãMQL etc.)
+  for (const k of keys) {
+    const kl = k.toLowerCase();
+    for (const f of eligible) {
+      const n = (f.field_name || '').toLowerCase();
+      if (n.includes(kl) && !/ id$| mã | code/i.test(f.field_name)) return f.field_name;
+    }
   }
   return null;
 }
