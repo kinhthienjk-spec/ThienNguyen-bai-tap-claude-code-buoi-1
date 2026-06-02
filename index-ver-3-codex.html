@@ -966,8 +966,13 @@ tailwind.config = {
           <h1 class="font-lexend text-2xl font-bold">Lead Generation</h1>
           <p class="text-outline text-sm mt-1">Pipeline tracking từ Lark Base — Số lượng · Chất lượng · Tiến độ</p>
         </div>
-        <div id="lark-leads-status" class="flex items-center gap-2 text-xs text-outline px-3 py-1.5 bg-surface-container-low rounded-full border border-outline-variant/30">
-          <span class="w-2 h-2 rounded-full bg-amber-400"></span>Kết nối Lark...
+        <div class="flex items-center gap-2">
+          <button onclick="refreshLarkData()" title="Làm mới dữ liệu" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-primary/5 border border-primary/20 rounded-full hover:bg-primary/10 transition-all">
+            <span class="material-symbols-outlined text-sm">refresh</span>Làm mới
+          </button>
+          <div id="lark-leads-status" class="flex items-center gap-2 text-xs text-outline px-3 py-1.5 bg-surface-container-low rounded-full border border-outline-variant/30">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>Kết nối Lark...
+          </div>
         </div>
       </div>
       <!-- Error -->
@@ -1108,8 +1113,13 @@ tailwind.config = {
           <h1 class="font-lexend text-2xl font-bold">Conversion Funnel</h1>
           <p class="text-outline text-sm mt-1">Full-funnel analysis từ Lark Base — Top-down từ New Lead → Revenue</p>
         </div>
-        <div id="lark-funnel-status" class="flex items-center gap-2 text-xs text-outline px-3 py-1.5 bg-surface-container-low rounded-full border border-outline-variant/30">
-          <span class="w-2 h-2 rounded-full bg-amber-400"></span>—
+        <div class="flex items-center gap-2">
+          <button onclick="refreshLarkData()" title="Làm mới dữ liệu" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-primary bg-primary/5 border border-primary/20 rounded-full hover:bg-primary/10 transition-all">
+            <span class="material-symbols-outlined text-sm">refresh</span>Làm mới
+          </button>
+          <div id="lark-funnel-status" class="flex items-center gap-2 text-xs text-outline px-3 py-1.5 bg-surface-container-low rounded-full border border-outline-variant/30">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>—
+          </div>
         </div>
       </div>
       <!-- Skeleton -->
@@ -1827,6 +1837,11 @@ let larkLeadsData    = null;
 
 const SRC_COLORS = ['#0037b7','#19d1ff','#b22b01','#ffce00','#00677f','#1877f2','#6366f1','#10b981','#f59e0b','#8b5cf6'];
 
+async function refreshLarkData() {
+  larkLeadsData = null;
+  await loadLarkLeads(true, true);
+}
+
 function setLarkStatus(page, label, tone) {
   const el = document.getElementById(`lark-${page}-status`);
   if (!el) return;
@@ -1841,12 +1856,12 @@ function showLarkError(page, msg) {
   else el.classList.add('hidden');
 }
 
-async function loadLarkLeads(force = false) {
+async function loadLarkLeads(force = false, forceRefresh = false) {
   const activeLeads  = document.querySelector('.page.active')?.id === 'page-leads';
   const activeFunnel = document.querySelector('.page.active')?.id === 'page-funnel';
   if (!activeLeads && !activeFunnel && !force) return;
   if (larkLeadsLoading) return;
-  if (!force && larkLeadsData) {
+  if (!force && !forceRefresh && larkLeadsData) {
     if (activeLeads)  renderLarkLeads(larkLeadsData);
     if (activeFunnel) renderLarkFunnel(larkLeadsData);
     return;
@@ -1857,7 +1872,8 @@ async function loadLarkLeads(force = false) {
   if (activeFunnel) setLarkStatus('funnel', 'Đang tải từ Lark...', 'loading');
 
   try {
-    const res  = await fetch('/api/lark-bitable', { cache: 'no-store' });
+    const url = forceRefresh ? '/api/lark-bitable?action=refresh' : '/api/lark-bitable';
+    const res  = await fetch(url, { cache: 'no-store' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.error) throw new Error(data.error || 'Lark API lỗi');
     larkLeadsData = data;
@@ -1887,35 +1903,49 @@ function stageChip(status) {
 function renderLarkLeads(data) {
   document.getElementById('lark-leads-loading').style.display  = 'none';
   document.getElementById('lark-leads-content').style.display  = 'block';
+
+  // Use marketing table data for lead generation tab
+  const mkt = data.marketing || data; // fallback to root for backward compat
+  const sales = data.sales || {};
+  const combined = data.combined || {};
+
   const ts = data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString('vi-VN') : '';
-  setLarkStatus('leads', `Lark · ${data.tableName || 'Base'} · ${ts}`, 'ok');
+  const cacheLabel = data.fromCache ? ' · Cache' : ' · Live';
+  setLarkStatus('leads', `Marketing · Sales · ${ts}${cacheLabel}`, 'ok');
   if (typeof showLarkError === 'function') showLarkError('leads', '');
 
-  const s = data.summary || {};
-  document.getElementById('leads-total').textContent     = (s.total  || 0).toLocaleString('vi-VN');
-  document.getElementById('leads-total-sub').textContent = `${data.tableCount || 1} bảng · ${(data.allTables || []).map(t => t.name).join(', ')}`;
-  document.getElementById('leads-active').textContent    = (s.active || 0).toLocaleString('vi-VN');
-  document.getElementById('leads-mql').textContent       = (s.mql    || 0).toLocaleString('vi-VN');
-  document.getElementById('leads-sql').textContent       = (s.sql    || 0).toLocaleString('vi-VN');
-  document.getElementById('leads-winrate').textContent   = `${s.winRate || 0}%`;
+  // KPIs: marketing total + combined mql/sql + sales win rate
+  const mktS  = mkt.summary     || {};
+  const salesS = sales.summary  || {};
+  const combS  = combined.summary || {};
+  document.getElementById('leads-total').textContent     = ((mktS.total || 0) + (salesS.total || 0)).toLocaleString('vi-VN');
+  document.getElementById('leads-total-sub').textContent = `Marketing: ${(mktS.total||0).toLocaleString('vi-VN')} · Sales: ${(salesS.total||0).toLocaleString('vi-VN')}`;
+  document.getElementById('leads-active').textContent    = ((mktS.active || 0) + (salesS.active || 0)).toLocaleString('vi-VN');
+  document.getElementById('leads-mql').textContent       = (combS.mql || mktS.mql || 0).toLocaleString('vi-VN');
+  document.getElementById('leads-sql').textContent       = (combS.sql || salesS.sql || 0).toLocaleString('vi-VN');
+  document.getElementById('leads-winrate').textContent   = `${combS.winRate || salesS.winRate || 0}%`;
 
-  // Lead Volume by Month (grouped bar: Total / MQL / Won)
-  const trend = data.trend || [];
-  makeChart('leadsVolumeChart', 'bar', trend.map(t => t.label), [
-    { label: 'Total',  data: trend.map(t => t.total), backgroundColor: 'rgba(0,55,183,0.75)',  borderRadius: 4, borderSkipped: false },
-    { label: 'MQL',    data: trend.map(t => t.mql),   backgroundColor: 'rgba(147,51,234,0.75)', borderRadius: 4, borderSkipped: false },
-    { label: 'Won',    data: trend.map(t => t.won),   backgroundColor: 'rgba(16,185,129,0.85)', borderRadius: 4, borderSkipped: false },
+  // Lead Volume by Month — combined trend (line chart, SEO-report style)
+  const trend = (combined.trend || mkt.trend || []);
+  makeChart('leadsVolumeChart', 'line', trend.map(t => t.label), [
+    { label: 'Tổng Leads', data: trend.map(t => t.total), borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.07)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#0037b7', borderWidth: 2 },
+    { label: 'MQL',        data: trend.map(t => t.mql),   borderColor: '#9333ea', tension: 0.4, pointRadius: 4, fill: false, borderWidth: 2 },
+    { label: 'Won',        data: trend.map(t => t.won),   borderColor: '#10b981', tension: 0.4, pointRadius: 4, fill: false, borderWidth: 2 },
   ], {
-    plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 12 } } },
+    plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 14 } } },
     scales: {
       x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' } },
       y: { grid: { color: 'rgba(195,197,217,0.2)' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#747688' }, border: { display: false } }
     }
   });
 
-  // Pipeline Stage (horizontal bar)
-  const stages = data.pipelineStages || [];
+  // Pipeline Stage from combined (horizontal bar)
+  const allStages = {};
+  (mkt.pipelineStages || []).forEach(s => { allStages[s.stage] = (allStages[s.stage] || 0) + s.count; });
+  (sales.pipelineStages || []).forEach(s => { allStages[s.stage] = (allStages[s.stage] || 0) + s.count; });
+  const STAGE_ORDER = ['New', 'Nurturing', 'MQL', 'SQL', 'Proposal', 'Won', 'Lost', 'Unknown'];
   const stageCols = { New: '#0037b7', Nurturing: '#f59e0b', MQL: '#9333ea', SQL: '#6366f1', Proposal: '#f97316', Won: '#10b981', Lost: '#ef4444', Unknown: '#94a3b8' };
+  const stages = STAGE_ORDER.map(st => ({ stage: st, count: allStages[st] || 0 })).filter(s => s.count > 0);
   makeChart('leadsPipelineChart', 'bar', stages.map(s => s.stage), [
     { data: stages.map(s => s.count), backgroundColor: stages.map(s => stageCols[s.stage] || '#0037b7'), borderRadius: 5 }
   ], {
@@ -1927,13 +1957,12 @@ function renderLarkLeads(data) {
     }
   });
 
-  // Source donut
-  const sources = (data.sourceArray || []).slice(0, 8);
+  // Source attribution — from combined (marketing + sales merged)
+  const sources = (combined.sourceArray || mkt.sourceArray || []).slice(0, 8);
   makeChart('leadsSourceDonut', 'doughnut', sources.map(s => s.source),
     [{ data: sources.map(s => s.count), backgroundColor: SRC_COLORS.slice(0, sources.length), borderWidth: 0, hoverOffset: 8 }],
     { scales: {}, cutout: '65%', plugins: { legend: { display: false } } });
 
-  // Source legend table
   const srcEl = document.getElementById('leads-source-table');
   if (srcEl) {
     srcEl.innerHTML = sources.map((s, i) => `
@@ -1945,7 +1974,6 @@ function renderLarkLeads(data) {
       </div>`).join('');
   }
 
-  // Win rate by source (horizontal bar)
   makeChart('leadsWinRateChart', 'bar', sources.map(s => s.source), [
     { data: sources.map(s => s.winRate), backgroundColor: sources.map((_, i) => SRC_COLORS[i]), borderRadius: 4 }
   ], {
@@ -1957,13 +1985,19 @@ function renderLarkLeads(data) {
     }
   });
 
-  // Recent leads table
-  const tbody  = document.getElementById('leads-table-body');
-  const lblEl  = document.getElementById('leads-table-label');
-  const recent = data.recentLeads || [];
-  if (lblEl) lblEl.textContent = `${recent.length} lead mới nhất`;
+  // Recent leads — marketing table (fresher leads) + sales recent
+  const mktRecent   = mkt.recentLeads   || [];
+  const salesRecent = sales.recentLeads || [];
+  const allRecent   = [...mktRecent, ...salesRecent]
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .filter((l, i, arr) => arr.findIndex(x => x.id === l.id) === i)
+    .slice(0, 25);
+
+  const tbody = document.getElementById('leads-table-body');
+  const lblEl = document.getElementById('leads-table-label');
+  if (lblEl) lblEl.textContent = `${allRecent.length} lead mới nhất`;
   if (tbody) {
-    tbody.innerHTML = recent.length ? recent.map(lead => `
+    tbody.innerHTML = allRecent.length ? allRecent.map(lead => `
       <tr class="hover:bg-surface-container-low/40 transition-colors">
         <td class="py-2.5 pr-4 font-medium" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(lead.name)}</td>
         <td class="py-2.5 pr-4">${stageChip(lead.status)}</td>
@@ -1979,25 +2013,31 @@ function renderLarkLeads(data) {
 function renderLarkFunnel(data) {
   document.getElementById('lark-funnel-loading').style.display = 'none';
   document.getElementById('lark-funnel-content').style.display = 'block';
-  const ts = data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString('vi-VN') : '';
-  setLarkStatus('funnel', `Lark · ${ts}`, 'ok');
 
-  const conv = data.convRates || {};
+  // Use combined funnel (marketing → sales pipeline)
+  const combined = data.combined || data;
+  const sales    = data.sales    || {};
+
+  const ts = data.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString('vi-VN') : '';
+  const cacheLabel = data.fromCache ? ' · Cache' : ' · Live';
+  setLarkStatus('funnel', `Combined · ${ts}${cacheLabel}`, 'ok');
+
+  const conv = combined.convRates || {};
   document.getElementById('conv-new-mql').textContent      = `${conv.newToMql      || 0}%`;
   document.getElementById('conv-mql-sql').textContent      = `${conv.mqlToSql      || 0}%`;
   document.getElementById('conv-sql-proposal').textContent = `${conv.sqlToProposal || 0}%`;
   document.getElementById('conv-proposal-won').textContent = `${conv.proposalToWon || 0}%`;
   document.getElementById('conv-overall').textContent      = `${conv.overall        || 0}%`;
 
-  // Top-down funnel visualization (HTML bars)
-  const fd = data.funnelData || {};
+  // Top-down funnel visualization (combined: marketing top, sales bottom)
+  const fd = combined.funnelData || {};
   const funnelStages = [
-    { label: 'New Leads',  count: fd.new      || 0, color: '#0037b7' },
-    { label: 'Nurturing',  count: fd.nurturing|| 0, color: '#f59e0b' },
-    { label: 'MQL',        count: fd.mql      || 0, color: '#9333ea' },
-    { label: 'SQL',        count: fd.sql      || 0, color: '#6366f1' },
-    { label: 'Proposal',   count: fd.proposal || 0, color: '#f97316' },
-    { label: 'Won',        count: fd.won      || 0, color: '#10b981' },
+    { label: 'New Leads',  count: fd.new       || 0, color: '#0037b7', src: 'Marketing' },
+    { label: 'Nurturing',  count: fd.nurturing || 0, color: '#f59e0b', src: 'Marketing' },
+    { label: 'MQL',        count: fd.mql       || 0, color: '#9333ea', src: 'Marketing' },
+    { label: 'SQL / SAL',  count: fd.sql       || 0, color: '#6366f1', src: 'Sales' },
+    { label: 'Proposal',   count: fd.proposal  || 0, color: '#f97316', src: 'Sales' },
+    { label: 'Won',        count: fd.won       || 0, color: '#10b981', src: 'Sales' },
   ].filter(s => s.count > 0);
 
   const maxCount = Math.max(...funnelStages.map(s => s.count), 1);
@@ -2007,14 +2047,18 @@ function renderLarkFunnel(data) {
       const barPct  = Math.max((stage.count / maxCount * 100), 2).toFixed(1);
       const dropPct = i > 0 && funnelStages[i-1].count > 0
         ? (stage.count / funnelStages[i-1].count * 100).toFixed(0) : null;
+      const srcBadge = `<span class="text-[9px] px-1.5 py-0.5 rounded font-bold" style="background:${stage.color}18;color:${stage.color};">${stage.src}</span>`;
       return `
         <div class="flex items-center gap-3">
-          <div class="text-right text-xs font-bold text-on-surface" style="width:88px;">${stage.label}</div>
-          <div class="flex-1 relative" style="height:32px;">
-            <div class="absolute inset-y-0 left-0 rounded-r-lg flex items-center" style="width:${barPct}%;background:${stage.color}22;min-width:6px;"></div>
-            <div class="absolute inset-y-0 left-0 rounded-r-lg" style="width:${barPct}%;background:linear-gradient(90deg,${stage.color},${stage.color}aa);min-width:4px;"></div>
+          <div class="text-right" style="width:110px;">
+            <div class="text-xs font-bold text-on-surface">${stage.label}</div>
+            <div class="mt-0.5">${srcBadge}</div>
           </div>
-          <div class="text-sm font-bold text-on-surface" style="width:48px;text-align:right;">${stage.count.toLocaleString('vi-VN')}</div>
+          <div class="flex-1 relative" style="height:32px;">
+            <div class="absolute inset-y-0 left-0 rounded-r-lg" style="width:${barPct}%;background:${stage.color}18;min-width:6px;"></div>
+            <div class="absolute inset-y-0 left-0 rounded-r-lg" style="width:${barPct}%;background:linear-gradient(90deg,${stage.color},${stage.color}aa);min-width:4px;opacity:0.85;"></div>
+          </div>
+          <div class="text-sm font-bold text-on-surface" style="width:56px;text-align:right;">${stage.count.toLocaleString('vi-VN')}</div>
           <div class="text-xs font-bold" style="width:64px;text-align:right;color:${dropPct !== null && parseInt(dropPct) < 50 ? '#ef4444' : dropPct !== null ? '#10b981' : '#94a3b8'};">
             ${dropPct !== null ? '↓ ' + dropPct + '%' : ''}
           </div>
@@ -2022,8 +2066,8 @@ function renderLarkFunnel(data) {
     }).join('');
   }
 
-  // Channel comparison chart (Total vs Won)
-  const sources = (data.sourceArray || []).slice(0, 7);
+  // Channel comparison chart — from combined source array
+  const sources = (combined.sourceArray || []).slice(0, 7);
   makeChart('funnelChannelChart', 'bar', sources.map(s => s.source), [
     { label: 'Total Leads', data: sources.map(s => s.count), backgroundColor: 'rgba(0,55,183,0.65)',  borderRadius: 4, borderSkipped: false },
     { label: 'Won',         data: sources.map(s => s.won),   backgroundColor: 'rgba(16,185,129,0.85)', borderRadius: 4, borderSkipped: false },
@@ -2035,12 +2079,13 @@ function renderLarkFunnel(data) {
     }
   });
 
-  // Monthly MQL/SQL/Won trend
-  const trend = data.trend || [];
+  // Monthly MQL/SQL/Won trend — combined trend (SEO-report line style)
+  const trend = combined.trend || [];
   makeChart('funnelTrendChart', 'line', trend.map(t => t.label), [
-    { label: 'Total', data: trend.map(t => t.total), borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.06)', fill: true, tension: 0.4, pointRadius: 3, borderDash: [] },
-    { label: 'MQL',   data: trend.map(t => t.mql),   borderColor: '#9333ea', tension: 0.4, pointRadius: 3, fill: false },
-    { label: 'Won',   data: trend.map(t => t.won),   borderColor: '#10b981', tension: 0.4, pointRadius: 3, fill: false },
+    { label: 'Tổng Leads', data: trend.map(t => t.total), borderColor: '#0037b7', backgroundColor: 'rgba(0,55,183,0.07)', fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2 },
+    { label: 'MQL',        data: trend.map(t => t.mql),   borderColor: '#9333ea', tension: 0.4, pointRadius: 3, fill: false, borderWidth: 2 },
+    { label: 'SQL',        data: trend.map(t => t.sql),   borderColor: '#6366f1', tension: 0.4, pointRadius: 3, fill: false, borderWidth: 2 },
+    { label: 'Won',        data: trend.map(t => t.won),   borderColor: '#10b981', tension: 0.4, pointRadius: 3, fill: false, borderWidth: 2 },
   ], {
     plugins: { legend: { display: true, position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, boxWidth: 8, usePointStyle: true, padding: 12 } } },
     scales: {
@@ -2052,26 +2097,29 @@ function renderLarkFunnel(data) {
   // Stage conversion analysis table
   const stageEl = document.getElementById('funnel-stage-table');
   if (stageEl) {
-    const stages = [
-      { from: 'New',      to: 'MQL',      rate: conv.newToMql,       fromCount: fd.new,      toCount: fd.mql },
-      { from: 'MQL',      to: 'SQL',      rate: conv.mqlToSql,       fromCount: fd.mql,      toCount: fd.sql },
-      { from: 'SQL',      to: 'Proposal', rate: conv.sqlToProposal,  fromCount: fd.sql,      toCount: fd.proposal },
-      { from: 'Proposal', to: 'Won',      rate: conv.proposalToWon,  fromCount: fd.proposal, toCount: fd.won },
+    const stageRows = [
+      { from: 'New Leads', to: 'MQL',      rate: conv.newToMql,       fromCount: fd.new,      toCount: fd.mql,      note: 'Marketing → MQL' },
+      { from: 'MQL',       to: 'SQL/SAL',  rate: conv.mqlToSql,       fromCount: fd.mql,      toCount: fd.sql,      note: 'Marketing → Sales handoff' },
+      { from: 'SQL',       to: 'Proposal', rate: conv.sqlToProposal,  fromCount: fd.sql,      toCount: fd.proposal, note: 'Sales demo / báo giá' },
+      { from: 'Proposal',  to: 'Won',      rate: conv.proposalToWon,  fromCount: fd.proposal, toCount: fd.won,      note: 'Close rate' },
     ];
-    stageEl.innerHTML = stages.map(row => {
+    stageEl.innerHTML = stageRows.map(row => {
       const r = parseFloat(row.rate || 0);
       const barColor = r >= 50 ? '#10b981' : r >= 25 ? '#f97316' : '#ef4444';
       const badge = r >= 50 ? 'chip-green' : r >= 25 ? 'chip-yellow' : 'chip-red';
       return `
         <div class="flex items-center gap-4 py-2.5 border-b border-outline-variant/10 last:border-0">
-          <div class="font-bold text-sm text-on-surface" style="width:140px;">${row.from} → ${row.to}</div>
+          <div style="width:150px;">
+            <div class="font-bold text-sm text-on-surface">${row.from} → ${row.to}</div>
+            <div class="text-[10px] text-outline mt-0.5">${row.note}</div>
+          </div>
           <div class="flex-1">
             <div class="progress-bar">
               <div class="progress-fill" style="width:${r}%;background:${barColor};"></div>
             </div>
           </div>
           <div class="font-bold text-sm" style="width:52px;text-align:right;color:${barColor};">${r}%</div>
-          <span class="${badge} text-[10px] px-2 py-0.5 rounded-full font-bold" style="width:72px;text-align:center;">${r >= 50 ? 'Tốt' : r >= 25 ? 'Trung bình' : 'Cần cải thiện'}</span>
+          <span class="${badge} text-[10px] px-2 py-0.5 rounded-full font-bold" style="min-width:80px;text-align:center;display:inline-block;">${r >= 50 ? 'Tốt' : r >= 25 ? 'Trung bình' : 'Cần cải thiện'}</span>
           <div class="text-xs text-outline" style="width:120px;text-align:right;">${(row.fromCount||0).toLocaleString('vi-VN')} → ${(row.toCount||0).toLocaleString('vi-VN')}</div>
         </div>`;
     }).join('');
